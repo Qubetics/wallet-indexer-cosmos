@@ -11,7 +11,7 @@ import WalletModel from './model.wallets';
 import CoinPriceInFiatModel from './model.coin_price_fiat';
 import CustomTokennModel from './model.custom_tokens';
 import TicsNativeAddressModel from './model.ticsNativeAddress';
-import TicsNativeOldBlockModel from './model.ethOldBlock';
+import TicsNativeOldBlockModel from './model.ticsNativeOldBlock';
 
 export {
     CoinsModel,

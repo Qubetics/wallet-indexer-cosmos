@@ -3,16 +3,6 @@ export enum BooleanEnum {
     true = 1
 }
 
-export enum CurrencyTypeEnum {
-    FIAT = 'fiat',
-    CRYPTO = 'crypto'
-}
-
-export enum allowSwapEnum {
-    TRUE = 'true',
-    FALSE = 'false'
-}
-
 export enum NotificationTypeEnum {
     ADMIN = "6",
     NONE = 'none',

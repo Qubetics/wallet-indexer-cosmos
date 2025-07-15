@@ -9,4 +9,4 @@ export { CatchErrorMsgsInterface } from './interface.catch_error_logs';
 export { CoinPriceInFiatInterface } from './interface.coin_price_fiat';
 export { CustomTokenInterface } from './interface.custom_tokens';
 export { TicsNativeInterface } from './interface.ticsNativeAddress';
-export { TicsNativeOldBlockInterface } from './interface.TicsNativeOldBlock';
+export { TicsNativeOldBlockInterface } from './interface.ticsNativeOldBlock';

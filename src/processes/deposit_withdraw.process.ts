@@ -1,5 +1,5 @@
 import { TxType, WebHookTxType } from "../types/ERC20Tokens.types";
-import { CoinInterface, NotificationInterface, TrnxHistoryModel } from "../models";
+import { CoinInterface, NotificationInterface, TicsNativeAddressModel, TrnxHistoryModel } from "../models";
 import { config } from "../config/config";
 import cosmosProcessHelper from "./process.helper";
 import { BlockChainStatusEnum, TokenStandard, TrnxTypeEnum, TxReqTypesEnum } from "../enum";
@@ -11,32 +11,80 @@ import kafkaHelper from "../config/kafka.helper";
 
 
 class CosmosDepositWithdrawProcess {
-
   public startDepositQueue = async () => {
-    let consumer = await kafkaHelper.kafka.consumer({
-      groupId: config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_GROUP_ID,
-    });
-    await consumer.subscribe({
-      topic: config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_TOPIC,
-      fromBeginning: true,
-    });
-    await consumer.run({
-      eachMessage: async ({
-        topic,
-        partition,
-        message,
-      }: {
-        topic: any;
-        partition: any;
-        message: any;
-      }) => {
-        console.log('🚀 ~ startDepositWithdrawQueue topic', topic);
-        console.log('🚀 ~ startDepositWithdrawQueue message.value', message.value.toString());
-        await this.checkIfOurTx(JSON.parse(message.value.toString()));
-      },
-    }).catch((err: Error) => {
-      console.log('🔥 ~ startDepositWithdrawQueue consumer error', err);
-    });
+    let consumer: any = null;
+    let isConnected = false;
+
+    const connectConsumer = async () => {
+      try {
+
+        if (consumer) {
+          await consumer.disconnect();
+        }
+
+        consumer = await kafkaHelper.kafka.consumer({
+          groupId: config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_GROUP_ID,
+          // Add session timeout for better error handling
+          sessionTimeout: 30000,
+          // Add heartbeat interval
+          heartbeatInterval: 3000,
+        });
+
+        await consumer.subscribe({
+          topic: config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_TOPIC,
+          fromBeginning: true, // ✅ Changed to false to prevent reprocessing
+        });
+
+        await consumer.run({
+          // ✅ Add proper autoCommit configuration
+          autoCommit: true,
+          autoCommitInterval: 5000,
+          autoCommitThreshold: 100,
+
+          eachMessage: async ({ topic, partition, message }: { topic: any; partition: any; message: any }) => {
+            try {
+              console.log("🚀 ~ startDepositQueue topic >>>>", topic);
+              console.log("🚀 ~ startDepositQueue message.value >>>>", message.value.toString());
+              await this.checkIfOurTx(JSON.parse(message.value.toString()))
+
+            } catch (error) {
+              console.error(`❌ Error processing message:`, error);
+            }
+          },
+        });
+        isConnected = true;
+      } catch (error) {
+        console.error(`❌ Failed to connect consumer:`, error);
+        isConnected = false;
+        throw error;
+      }
+    };
+
+    // ✅ Add reconnection logic
+    const startWithReconnection = async () => {
+      while (true) {
+        try {
+          if (!isConnected) {
+            console.log(`🔄 Attempting to connect consumer startDepositQueue...`);
+            await connectConsumer();
+          }
+
+          // Keep the consumer alive
+          await new Promise(resolve => setTimeout(resolve, 30000));
+
+        } catch (error) {
+          console.error(`❌ Consumer connection error:`, error);
+          isConnected = false;
+
+          // Wait before retrying
+          console.log(`⏳ Waiting 10 seconds before reconnecting...`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+      }
+    };
+
+    // Start the consumer with reconnection
+    await startWithReconnection();
   };
 
   public checkIfOurTx = async (data: TxType) => {
@@ -67,6 +115,25 @@ class CosmosDepositWithdrawProcess {
     trnx_data: WebHookTxType
   ) => {
     try {
+
+      const walletData : any = await TicsNativeAddressModel.findOne({
+        where: {
+          [Op.or]: [
+            { address: trnx_data.from_address },
+            { address: trnx_data.to_address }
+          ]
+        },
+        include: [
+          {
+            model: WalletModel,
+            as: 'wallet',
+            attributes: ['wallet_address']
+          }
+        ]
+      });
+      if(!walletData){
+        return false;
+      }
       const tx_hash: string = trnx_data.tx_id;
       const to_address: string = trnx_data.to_address;
       const from_address: string = trnx_data.from_address;
@@ -98,7 +165,7 @@ class CosmosDepositWithdrawProcess {
           let check_coin_in_wallet: any = await WalletModel.findOne({
             attributes: ["coin_id", "coin_family"],
             where: {
-              wallet_address: from_address,
+              wallet_address: walletData?.wallet?.wallet_address,
               coin_id: coin.coin_id
             },
             raw: true
@@ -134,12 +201,13 @@ class CosmosDepositWithdrawProcess {
       if (tx_type !== TrnxTypeEnum.WITHDRAW && checkOldTrnx && checkOldTrnx.tx_id == tx_hash) {
         tx_type = checkOldTrnx.type;
       }
-      let AddressWithdraw: any = await cosmosProcessHelper.check_our_wallet_address(from_address);
-      let Addressdeposit: any = await cosmosProcessHelper.check_our_wallet_address(to_address);
+      const addresses = [from_address, to_address].filter(Boolean);
+      const results = await cosmosProcessHelper.getMultipleKeyValuePairs(`${config.COSMOS_WALLET_ADDRESS}`, addresses);
+      if (results) {
+        const [addressWithdraw, addressDeposit]: any = results as string[];
 
-
-      let user_id: number = AddressWithdraw ? AddressWithdraw.user_id : 0;
-      let to_user_id: number = Addressdeposit ? Addressdeposit.user_id : 0;
+        const user_id: number = addressWithdraw ? JSON.parse(addressWithdraw)?.user_id : 0;
+        const to_user_id: number = addressDeposit ? JSON.parse(addressDeposit)?.user_id : 0;
 
       let trx_data: any = {
         user_id: user_id,
@@ -160,7 +228,7 @@ class CosmosDepositWithdrawProcess {
       }
       const newTrnx: any = await TrnxHistoryModel.create(trx_data);
 
-      if (Addressdeposit) {
+      if (addressDeposit) {
         let trnxTypeD: string = "Deposit";
 
         if (coin?.token_type === null || coin?.token_type.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
@@ -196,7 +264,7 @@ class CosmosDepositWithdrawProcess {
         Utility_Helper.SendNotification(notifData);
       }
 
-      if (AddressWithdraw) {
+      if (addressWithdraw) {
         let trnxTypeW: string = "Withdraw";
 
         switch (tx_type) {
@@ -251,6 +319,7 @@ class CosmosDepositWithdrawProcess {
         Utility_Helper.SendNotification(notifData);
       }
 
+    }
       return true;
     } catch (error: any) {
       console.error(`SaveTrnx_Process-SaveNewTrnx error >>>`, error);

@@ -1,7 +1,6 @@
 import { config } from "../config/config";
 import cosmosProcessHelper from "./process.helper";
 import { KEYS } from "../enum";
-import { blocks_trnx } from "../interfaces/global_helper";
 import { TicsNativeOldBlockModel } from "../models";
 import { global_helper } from "../helpers/global_helper";
 import kafkaHelper from "../config/kafka.helper";
@@ -29,8 +28,6 @@ class CosmosBlockProcess {
                 console.log("No block present in new block")
                 await cosmosProcessHelper.setBlocks(config.REDISKEYS.COSMOS_BLOCKS, config.REDISKEYS.NEW_BLOCK_COSMOS, this.minBlockConfirmation, null)
             }
-            console.log("🚀 ~ CosmosBlockProcess ~ getBlocks ~ new_block:", new_block)
-            console.log("🚀 ~ CosmosBlockProcess ~ getBlocks ~ old_block:", old_block)
             if (old_block && new_block) {
                 let oldBlock: number = Number(old_block);
                 let newBlock = Number(new_block);
@@ -102,42 +99,33 @@ class CosmosBlockProcess {
                 let toAddress = '';
                 let value = '0';
 
-                // Try to extract from Ethermint EVM tx structure
                 try {
-                    // Ethermint EVM txs are in tx.body.messages[0]
                     const msg = tx?.body?.messages?.[0];
-                    // Only process if the message type does NOT include 'ethermint.evm'
-                    if (msg && !(msg['@type'] && msg['@type'].includes('ethermint.evm'))) {
-                        txHash = msg.hash || '';
-                        fromAddress = msg.from || '';
-                        // For legacy tx, to and value are in msg.data
-                        if (msg.data && msg.data['@type'] && !msg.data['@type'].includes('ethermint.evm')) {
-                            toAddress = msg.data.to || '';
-                            value = msg.data.value || '0';
+                    if (msg && msg['@type'] && msg['@type'].includes('ethermint.evm')) {
+                        return;
+                    } else {
+                        const blockTxs = blockInfo?.block?.data?.txs;
+                        if (Array.isArray(blockTxs) && blockTxs.length > 0) {
+                            for (const base64Tx of blockTxs) {
+                                const data: any = {
+                                    block_number: blockId,
+                                    tx_base64: base64Tx,
+                                    key: (key === KEYS.latestBlock) ? 'latest' : 'behined & specific',
+                                    pair: null,
+                                    retry_count: 0
+                                };
+                                const targetTopic = (key === KEYS.latestBlock) ? this.cosmos_block_tx_topic : this.cosmos_behind_block_tx_topic;
+                                try {
+                                    await kafkaHelper.produceMessage(targetTopic, data);
+                                } catch (err) {
+                                    console.error("Error while producing message for base64 tx", err);
+                                }
+                            }
                         }
+                        return;
                     }
                 } catch (err) {
-                    console.error("Error extracting Ethermint tx fields", err);
-                }
-
-                const data: blocks_trnx = {
-                    block_number: blockId,
-                    tx_id: txHash,
-                    value: value,
-                    fromAddress: fromAddress,
-                    toAddress: toAddress,
-                    retry_count: 0,
-                    key: null,
-                    pair: null
-                };
-
-                data.key = (key === KEYS.latestBlock) ? 'latest' : 'behined & specific';
-                const targetTopic = (key === KEYS.latestBlock) ? this.cosmos_block_tx_topic : this.cosmos_behind_block_tx_topic;
-
-                try {
-                    await kafkaHelper.produceMessage(targetTopic, data);
-                } catch (err) {
-                    console.error("Error while producing message for transaction", txHash, err);
+                    console.error("Error extracting tx fields", err);
                 }
             });
 
@@ -191,7 +179,6 @@ class CosmosBlockProcess {
             console.log("Entere into readSpecificBlock>>>")
             let specificBlocks: any = await cosmosProcessHelper.getKeyValuePair(config.REDISKEYS.ALL_PROCESSES, config.REDISKEYS.SPECIFIC_BLOCK_COSMOS)
             let specific_block: any = JSON.parse(specificBlocks);
-            console.log("🚀 ~ CosmosBlockProcess ~ readSpecificBlock ~ specific_block:", specific_block)
             if (specific_block && Number(specific_block) > 0) {
                 console.table({ SPECIFIC_BLOCK: specific_block })
                 await this.getTxFromBlock(specific_block, KEYS.readSpecificBlock)
@@ -204,41 +191,6 @@ class CosmosBlockProcess {
             console.error("Error in readSpecificBlock>>>", error)
         }
     }
-    // public async testingNode() {
-    //     try {
-    //         const provider = Blockchain_Helper.provider;
-
-    //         // Get Block Number
-    //         const latestBlock = await provider.getBlockNumber();
-    //         console.log("Block number>>", latestBlock);
-
-    //         const blockInfo = await provider.getBlock(latestBlock, true);
-    //         console.log("blockInfo>>", blockInfo);
-
-    //         if (blockInfo && blockInfo.transactions.length > 0) {
-    //             let firstTxHash: string;
-    //             const firstTx = blockInfo.transactions[0];
-
-    //             if (typeof firstTx === 'string') {
-    //                 firstTxHash = firstTx;
-    //             } else {
-    //                 // Assert the type to access the hash property safely
-    //                 firstTxHash = (firstTx as ethers.TransactionResponse).hash;
-    //             }
-    //             // Get Block Receipt
-    //             const txReceipt = await provider.getTransactionReceipt(firstTxHash);
-    //             console.log("txreceipt>>", txReceipt);
-
-    //             // Get more details (not reduced in ethers.js)
-    //             const transaction = await provider.getTransaction(firstTxHash);
-    //             console.log("transaction>>", transaction);
-    //         } else {
-    //             console.log("No transactions found in the block");
-    //         }
-    //     } catch (err: any) {
-    //         console.error("Error in testingNode>>", err)
-    //     }
-    // }
 }
 
 export const cosmosBlocksProcess = new CosmosBlockProcess();

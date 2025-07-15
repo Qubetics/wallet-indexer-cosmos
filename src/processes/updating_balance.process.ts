@@ -6,7 +6,7 @@ import { WalletModel } from "../models";
 class UpdateBalanceController {
     public cosmos_pending_balance_update_topic = config.config.KAFKA_BALANCE.COSMOS_PENDING_BALANCE_UPDATE_TOPIC;
 
-    public update_wallet_balance = async () => {
+    public updateWalletBalance = async () => {
         let consumer = await kafkaHelper.kafka.consumer({ groupId: config.config.KAFKA_BALANCE.COSMOS_PENDING_BALANCE_UPDATE_GROUP_ID });
         await consumer.subscribe({ topic: this.cosmos_pending_balance_update_topic, fromBeginning: true });
         await consumer.run({

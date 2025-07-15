@@ -21,9 +21,6 @@ class CosmosProcessHelper {
   }
 
   constructor() {
-    // this.fetchERC20Tokens();
-    // this.fetchERC721Tokens();
-    // this.fetchWalletAddress();
   }
   public async getKeyValuePair(keyName: string, field: string) {
     try {
@@ -37,7 +34,6 @@ class CosmosProcessHelper {
   }
   public async setBlocks(field: string, key: string, minBlockConfirmation: number, newBlock: number | null) {
     try {
-      console.log("🚀 ~ CosmosProcessHelper ~ setBlocks ~ field:")
       // Use node-fetch for HTTP requests since fetch is not defined in Node.js by default
       // Fetch latest Cosmos block from REST API
       const response = await fetch("https://swagger-internal.qubetics.com/cosmos/base/tendermint/v1beta1/blocks/latest");
@@ -45,13 +41,11 @@ class CosmosProcessHelper {
         throw new Error(`Failed to fetch latest Cosmos block: ${response.statusText}`);
       }
       const data = await response.json();
-      console.log("🚀 ~ CosmosProcessHelper ~ setBlocks ~ data:", data)
       let latestBlockStr = data?.block?.header?.height || data?.sdk_block?.header?.height;
       if (!latestBlockStr) {
         throw new Error("Could not find block height in Cosmos REST API response");
       }
       let latestBlock = Number(latestBlockStr);
-      console.log("🚀 ~ CosmosProcessHelper ~ setBlocks ~ latestBlock:", latestBlock)
       if (isNaN(latestBlock)) {
         throw new Error("Block height from Cosmos REST API is not a number");
       }
@@ -131,133 +125,29 @@ class CosmosProcessHelper {
     }
   }
 
-
-
-  // public fetchERC20Tokens = async () => {
-  //   try {
-  //     let tokens: any = await CoinsModel.findAll({
-  //       attributes: ["coin_id", "coin_symbol", "coin_family", "is_token", "token_type", "decimals", "token_address", "for_swap", "added_by"],
-  //       where: {
-  //         coin_status: 1,
-  //         coin_family: config.STATIC_COIN_FAMILY.ETH,
-  //         [Op.or]: [{ token_type: TokenStandard.ERC20 }, { token_type: null }]
-  //       },
-  //       raw: true,
-  //       logging: true
-  //     });
-  //     console.log('`${config.TOKEN_TYPE_ETH}`', `${config.TOKEN_TYPE_ETH}`)
-  //     for await (let token of tokens) {
-  //       let findTokenData = await this.getKeyValuePair(
-  //         `${config.TOKEN_TYPE_ETH}`,
-  //         token.token_address == null ? 'NativeCoin'.toUpperCase() : token.token_address.toUpperCase(),
-  //       );
-  //       if (!findTokenData) {
-  //         this.setKeyValuePair(
-  //           `${config.TOKEN_TYPE_ETH}`,
-  //           token.token_address == null ? 'NativeCoin'.toUpperCase() : token.token_address.toUpperCase(),
-  //           // token.token_address.toUpperCase(),
-  //           JSON.stringify(token)
-  //         );
-  //       }
-  //     }
-
-  //     // redisClient.set(config.TOKEN_TYPE_ETH || "", JSON.stringify(tokens));
-  //   } catch (err: any) {
-  //     console.error('fetchERC20Tokens >>>>>', err);
-  //     await global_helper.save_error_logs('ETH_fetchERC20Tokens', err.message)
-  //   }
-  // }
-
-  // public fetchWalletAddress = async () => {
-  //   try {
-  //     const getaddressQuery = `SELECT ws.user_id,ws.wallet_address as address, ws.wallet_name FROM wallets ws FORCE INDEX (coin_family) JOIN coins cs ON ws.coin_id = cs.coin_id WHERE cs.coin_family = ${config.STATIC_COIN_FAMILY.TICS} GROUP BY ws.wallet_address`;
-  //     const addresses: any = await database.db_write.query(
-  //       getaddressQuery,
-  //       { type: QueryTypes.SELECT }
-  //     );
-  //     for await (let wallet of addresses) {
-  //       let findAddress = await this.getKeyValuePair(
-  //         `${config.COSMOS_WALLET_ADDRESS}`,
-  //         wallet.address.toUpperCase()
-  //       );
-  //       if (!findAddress) {
-  //         this.setKeyValuePair(
-  //           `${config.COSMOS_WALLET_ADDRESS}`,
-  //           wallet.address.toUpperCase(),
-  //           JSON.stringify(wallet)
-  //         );
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('💥 ~ fetchWalletAddress error', error);
-  //   }
-  // };
-
   public checkIfContract = async (address: string) => {
     try {
       let token_data: any = await this.getKeyValuePair(config.TOKEN_TYPE_COSMOS, address);
-      // if (token_data) {
-      //   console.log("token_data>>>>>>>>", token_data)
-      // }
       return JSON.parse(token_data);
     } catch (err: any) {
       console.error('check_our_wallet_address >>>>>', err);
       return null;
     }
   };
-
-  // public checkIfContract = async (address: string) => {
-  //   try {
-  //     const getAsync = promisify(redisClient.get).bind(redisClient);
-  //     const value = await getAsync(config.TOKEN_TYPE_ETH || "");
-
-  //     const erc20Tokens: CoinInterface[] = value ? JSON.parse(value) : [];
-  //     const token = erc20Tokens.find(
-  //       (el: any) => Number(el.is_token) === Number(BooleanEnum.true) && el.token_address?.toUpperCase() === address?.toUpperCase()
-  //     );
-  //     if (token) return token;
-  //     return null;
-  //   } catch (error: any) {
-  //     console.error('checkIfContract >>>', error);
-  //     return null;
-  //   }
-  // };
-
-  // public fetchERC721Tokens = async () => {
-  //   try {
-  //     const getTokenQuery = `SELECT coin_id,coin_symbol,coin_family,is_token, token_type,decimals,token_address,for_swap, added_by FROM coins WHERE coin_status=1 AND coin_family=${config.STATIC_COIN_FAMILY.ETH} AND token_type!='${TokenStandard.ERC20}' AND token_type IS NOT NULL`;
-
-  //     const tokens: CoinInterface[] = await database.db_read.query(getTokenQuery, {
-  //       type: Sequelize.QueryTypes.SELECT,
-  //     });
-  //     if (tokens.length > 0) {
-  //       for await (let token of tokens) {
-  //         if (token.token_address) {
-  //           this.setKeyValuePair(
-  //             `${config.COSMOS_NFT}`,
-  //             token.token_address.toUpperCase(),
-  //             JSON.stringify(token)
-  //           );
-  //         }
-  //       }
-  //     }
-  //   } catch (error: any) {
-  //     console.error('fetchERC721Tokens >>>>', error);
-  //   }
-  // };
-
-  // public checkIfOurNFTContract = async (address: string) => {
-  //   try {
-  //     const token = await this.getKeyValuePair(`${config.COSMOS_NFT}`, address);
-  //     if (token) {
-  //       return JSON.parse(token);
-  //     } else {
-  //       return {}
-  //     }
-  //   } catch (error) {
-  //     console.error(`💥 ~ checkIfContract error`, error);
-  //   }
-  // };
+  public async getMultipleKeyValuePairs(keyName: string, fields: string[]) {
+    try {
+      const upperFields = fields.map(f => f.toUpperCase());
+      return new Promise((resolve, reject) => {
+        redisClient.hmget(keyName, ...upperFields, (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        });
+      });
+    } catch (err: any) {
+      console.error('getMultipleKeyValuePairs >>>>', err);
+      return null;
+    }
+  }
 
   public check_our_wallet_address = async (address: string) => {
     try {
@@ -271,41 +161,7 @@ class CosmosProcessHelper {
       return null;
     }
   };
-  // public NativeCoinByCoinFamily = async (
-  //   coin_family: CoinFamilyEnum
-  // ) => {
-  //   try {
-  //     const getAsync = promisify(redisClient.get).bind(redisClient);
-  //     const value = await getAsync(config.TOKEN_TYPE_ETH || "");
-
-  //     const erc20Tokens: CoinInterface[] = value ? JSON.parse(value) : [];
-  //     return erc20Tokens.find(
-  //       (el: CoinInterface) => Number(el.is_token) === Number(BooleanEnum.false) && el.coin_family === coin_family
-  //     );
-
-  //   } catch (error: any) {
-  //     console.error(`NativeCoinByCoinFamily >>>`, error);
-  //     return 0;
-  //   }
-  // }
-
-  // public CoinByCoinId = async (
-  //   coin_id: number
-  // ) => {
-  //   try {
-  //     const getAsync = promisify(redisClient.get).bind(redisClient);
-  //     const value = await getAsync(config.TOKEN_TYPE_ETH || "");
-
-  //     const erc20Tokens: CoinInterface[] = value ? JSON.parse(value) : [];
-  //     return erc20Tokens.find(
-  //       (el: CoinInterface) => el.coin_id === coin_id
-  //     );
-
-  //   } catch (error: any) {
-  //     console.error(`CoinByCoinId >>>`, error);
-  //     return null;
-  //   }
-  // }
+  
   public behindBlocks = async () => {
     try {
       let behindBlocks: any = await TicsNativeOldBlockModel.findOne({

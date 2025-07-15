@@ -8,6 +8,8 @@ import { TrnxTypeEnum } from "../enum";
 import { global_helper } from "../helpers/global_helper";
 import { TransactionReceipt } from "ethers";
 import fetch from 'node-fetch';
+import { sha256 } from "@cosmjs/crypto"
+import { toHex } from "@cosmjs/encoding"
 class queue_transactions {
     public cosmos_block_tx_topic = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_TOPIC;
     public cosmos_block_tx_group_id = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_GROUP_ID;
@@ -18,33 +20,169 @@ class queue_transactions {
     constructor() {}
 
     public startBlockTxQueue = async () => {
-        let consumer = await kafkaHelper.kafka.consumer({ groupId: this.cosmos_block_tx_group_id });
-        await consumer.subscribe({ topic: this.cosmos_block_tx_topic, fromBeginning: true });
+        let consumer: any = null;
+        let isConnected = false;
 
-        await consumer.run({
-            eachMessage: ({ topic, partition, message }: { topic: any, partition: any, message: any }) => {
-                this.read_trnx(JSON.parse(message.value.toString()))
+        const connectConsumer = async () => {
+            try {
+
+                if (consumer) {
+                    await consumer.disconnect();
+                }
+
+                consumer = await kafkaHelper.kafka.consumer({
+                    groupId: this.cosmos_block_tx_group_id,
+                    // Add session timeout for better error handling
+                    sessionTimeout: 30000,
+                    // Add heartbeat interval
+                    heartbeatInterval: 3000,
+                });
+
+                await consumer.subscribe({
+                    topic: this.cosmos_block_tx_topic,
+                    fromBeginning: true, // ✅ Changed to false to prevent reprocessing
+                });
+
+                await consumer.run({
+                    // ✅ Add proper autoCommit configuration
+                    autoCommit: true,
+                    autoCommitInterval: 5000,
+                    autoCommitThreshold: 100,
+
+                    eachMessage: async ({ topic, partition, message }: { topic: any; partition: any; message: any }) => {
+                        try {
+                            console.log("🚀 ~ startBlockTxQueue topic >>>>", topic);
+                            console.log("🚀 ~ startBlockTxQueue message.value >>>>", message.value.toString());
+                            await this.readTrnx(JSON.parse(message.value.toString()))
+
+                        } catch (error) {
+                            console.error(`❌ Error processing message:`, error);
+                        }
+                    },
+                });
+                isConnected = true;
+            } catch (error) {
+                console.error(`❌ Failed to connect consumer:`, error);
+                isConnected = false;
+                throw error;
             }
-        }).catch((err: Error) => {
-            console.log("🔥 ~ startBlockTxQueue consumer error", err);
-        });
+        };
+
+        // ✅ Add reconnection logic
+        const startWithReconnection = async () => {
+            while (true) {
+                try {
+                    if (!isConnected) {
+                        console.log(`🔄 Attempting to connect consumer startBlockTxQueue...`);
+                        await connectConsumer();
+                    }
+
+                    // Keep the consumer alive
+                    await new Promise(resolve => setTimeout(resolve, 30000));
+
+                } catch (error) {
+                    console.error(`❌ Consumer connection error:`, error);
+                    isConnected = false;
+
+                    // Wait before retrying
+                    console.log(`⏳ Waiting 10 seconds before reconnecting...`);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                }
+            }
+        };
+
+        // Start the consumer with reconnection
+        await startWithReconnection();
     };
 
     public startBehindBlockTxQueue = async () => {
-        let consumer = await kafkaHelper.kafka.consumer({ groupId: this.cosmos_behind_block_tx_group_id });
-        await consumer.subscribe({ topic: this.cosmos_behind_block_tx_topic, fromBeginning: true });
+        let consumer: any = null;
+        let isConnected = false;
 
-        await consumer.run({
-            eachMessage: ({ topic, partition, message }: { topic: any, partition: any, message: any }) => {
-                this.read_trnx(JSON.parse(message.value.toString()))
+        const connectConsumer = async () => {
+            try {
+
+                if (consumer) {
+                    await consumer.disconnect();
+                }
+
+                consumer = await kafkaHelper.kafka.consumer({
+                    groupId: this.cosmos_behind_block_tx_group_id  ,
+                    // Add session timeout for better error handling
+                    sessionTimeout: 30000,
+                    // Add heartbeat interval
+                    heartbeatInterval: 3000,
+                });
+
+                await consumer.subscribe({
+                    topic: this.cosmos_behind_block_tx_topic,
+                    fromBeginning: false, // ✅ Changed to false to prevent reprocessing
+                });
+
+                await consumer.run({
+                    // ✅ Add proper autoCommit configuration
+                    autoCommit: true,
+                    autoCommitInterval: 5000,
+                    autoCommitThreshold: 100,
+
+                    eachMessage: async ({ topic, partition, message }: { topic: any; partition: any; message: any }) => {
+                        try {
+                            console.log("🚀 ~ startBehindBlockTxQueue topic >>>>", topic);
+                            console.log("🚀 ~ startBehindBlockTxQueue message.value >>>>", message.value.toString());
+                            await this.readTrnx(JSON.parse(message.value.toString()))
+
+                        } catch (error) {
+                            console.error(`❌ Error processing message:`, error);
+                        }
+                    },
+                });
+                isConnected = true;
+            } catch (error) {
+                console.error(`❌ Failed to connect consumer:`, error);
+                isConnected = false;
+                throw error;
             }
-        }).catch((err: Error) => {
-            console.log("🔥 ~ startBehindBlockTxQueue consumer error", err);
-        });
+        };
+
+        // ✅ Add reconnection logic
+        const startWithReconnection = async () => {
+            console.log('isConnected >>>', isConnected);
+            while (true) {
+                try {
+                    if (!isConnected) {
+                        console.log(`🔄 Attempting to connect consumer startBehindBlockTxQueue...`);
+                        await connectConsumer();
+                    }
+
+                    // Keep the consumer alive
+                    await new Promise(resolve => setTimeout(resolve, 30000));
+
+                } catch (error) {
+                    console.error(`❌ Consumer connection error:`, error);
+                    isConnected = false;
+
+                    // Wait before retrying
+                    console.log(`⏳ Waiting 10 seconds before reconnecting...`);
+                    await new Promise(resolve => setTimeout(resolve, 10000));
+                }
+            }
+        };
+
+        // Start the consumer with reconnection
+        await startWithReconnection();
     };
-    public async read_trnx(data: blocks_trnx) {
+
+    public async readTrnx(data: any) {
         try {
-            console.log("🚀 ~ queue_transactions ~ read_trnx ~ data:", data)
+            let computedTxHash = "";
+            if (data.tx_base64) {
+                const txRawBuffer = Buffer.from(data.tx_base64, 'base64');
+                const hashBytes = sha256(txRawBuffer);
+                computedTxHash = '0x' + toHex(hashBytes);
+                data.tx_id = computedTxHash;
+            }else{
+                return;
+            }
             // Use Tendermint REST API to fetch transaction by hash
             const txHash = data.tx_id.startsWith('0x') ? data.tx_id : '0x' + data.tx_id;
             const url = `https://tendermint-internal.qubetics.com/tx?hash=${txHash}`;
@@ -58,12 +196,10 @@ class queue_transactions {
                 }
                 return false;
             }
-
+            
             const txResponse = await response.json();
-            console.log("🚀 ~ queue_transactions ~ read_trnx ~ txResponse:", txResponse)
-
             // Defensive: check for tx_result and code
-            const txResult = txResponse?.tx_result;
+            const txResult = txResponse?.result?.tx_result;
             if (txResult?.code === 0) {
                 // Parse Cosmos events to extract transfer details
                 let fromAddress = "";
@@ -143,19 +279,19 @@ class queue_transactions {
                     blockNumber: data.block_number,
                     logs: [], // Not EVM logs, but we can pass empty or custom if needed
                     gasUsed: txResult?.gas_used || 0,
-                    gasPrice: 0, // Not available in Cosmos, set to 0 or estimate if needed
+                    gasPrice: txResult?.gas_price ||1, // Not available in Cosmos, set to 0 or estimate if needed
                     from: fromAddress,
                     to: toAddress,
                     value: finalAmount,
                     trnx_fee: trnx_fee
                 };
-
+                
                 // Optionally, you could pass from/to/value/trnx_fee in data for downstream
                 data.fromAddress = fromAddress;
                 data.toAddress = toAddress;
                 data.value = finalAmount;
-
-                await cosmos_tx_status_deposit_withdraw.check_cosmos_deposit(data, txReceipt);
+                
+                await cosmosTxStatusDepositWithdraw.check_cosmos_deposit(data, txReceipt);
             } else if (txResult?.code !== undefined) {
                 // Transaction failed
                 console.log("(tx_result.code !== 0) Transaction failed for hash:", txHash);
@@ -176,17 +312,7 @@ class queue_transactions {
             }
         }
     }
-    // public async buildTx(txReceipt: TransactionReceipt, data: blocks_trnx) {
-    //     try {
-    //         // Cosmos txReceipt.logs is always empty or not EVM logs, so we skip EVM log parsing
-    //         // Instead, we use the data and txReceipt fields directly for Cosmos
-    //         // Only check_eth_deposit for Cosmos
-    //         await cosmos_tx_status_deposit_withdraw.check_cosmos_deposit(data, txReceipt);
-    //     } catch (error: any) {
-    //         console.error("buildTx error >>>", (error as Error).message);
-    //         await global_helper.save_error_logs('Cosmos_buildTx', error.message)
-    //     }
-    // };
+
     public async check_cosmos_deposit(data: blocks_trnx, txReceipt: TransactionReceipt) {
         try {
             /** for check the eth deposit */
@@ -224,26 +350,24 @@ class queue_transactions {
     }
     public async checkAddressInDB(txData: TxType) {
         try {
-            let ourTrnx: any = null;
-            const deposit = await cosmosProcessHelper.check_our_wallet_address(txData.toAddress);
-            if (deposit) {
-                console.log("Found the user in to (DEPOSIT) tx 😸");
-                txData.txType = TrnxTypeEnum.DEPOSIT;
-                ourTrnx = txData;
-            }else{
-                const withdraw = await cosmosProcessHelper.check_our_wallet_address(txData.fromAddress);
-                if (withdraw) {
-                    console.log("Found the user in FROM (WITHDRAW) tx 😸");
-                    txData.txType = TrnxTypeEnum.WITHDRAW;
-                    ourTrnx = txData;
+
+            const addresses = [txData.fromAddress, txData.toAddress].filter(Boolean);
+
+            if (addresses.length > 0) {
+                const results = await cosmosProcessHelper.getMultipleKeyValuePairs(`${config.COSMOS_WALLET_ADDRESS}`, addresses);
+
+                if (results) {
+                    const [withdrawTx, depositTx] = results as string[];
+                    if (depositTx) {
+                        txData.txType = TrnxTypeEnum.DEPOSIT;
+                    } else if (withdrawTx) {
+                        txData.txType = TrnxTypeEnum.WITHDRAW;
+                    }
                 }
             }
-
-            
-           
-            if (ourTrnx) {
-                await cosmos_tx_status_deposit_withdraw.addTxToQueue(
-                    ourTrnx,
+            if (txData.txType !== null) {
+                await cosmosTxStatusDepositWithdraw.addTxToQueue(
+                    txData,
                     this.deposit_withdraw_topic || ""
                 );
             }
@@ -251,30 +375,7 @@ class queue_transactions {
             console.error("Error in checkAddressInDB>>", err)
         }
     }
-    // public getTransferEventDetail = async (
-    //     tokenAddress: string,
-    //     blockId: number
-    // ) => {
-    //     try {
-    //         const contract = new ethers.Contract(
-    //             tokenAddress,
-    //             config.ERC721ABI,
-    //             Blockchain_Helper.provider
-    //         );
-
-    //         const filter = contract.filters.Transfer();
-    //         const events = await contract.queryFilter(
-    //             filter,
-    //             blockId,
-    //             blockId
-    //         );
-
-    //         return events;
-    //     } catch (error) {
-    //         console.log("🔥 ~ getTransferEventDetail error", (error as Error).message);
-    //         return [];
-    //     }
-    // };
+   
     public async addTxToQueue(data: TxType, queueName: string) {
         try {
             await kafkaHelper.produceMessage(queueName, data)
@@ -286,4 +387,4 @@ class queue_transactions {
     };
 
 }
-export const cosmos_tx_status_deposit_withdraw = new queue_transactions()
+export const cosmosTxStatusDepositWithdraw = new queue_transactions()

@@ -49,12 +49,13 @@ class WalletHelper {
             );
             
             if (balance !== null) {
-                const wallet_data = await TicsNativeAddressModel.findOne({
+                const wallet_data : any = await TicsNativeAddressModel.findOne({
                     where: {
                         address: wallet_address,
                     },
                     include: [{
                         model: WalletModel,
+                        as: 'wallet',
                         attributes: ["wallet_id"],
                     }]
                 })
@@ -65,7 +66,7 @@ class WalletHelper {
 
                     }, {
                         where: {
-                            wallet_id: wallet_data.wallet_id,   
+                            wallet_id: wallet_data?.wallet?.wallet_id,   
                         }
                     });
                 }
@@ -85,41 +86,6 @@ class WalletHelper {
             return null;
         }
     }
-
-    Update_all_active_coin_balance = async (wallet_address: string, coin_family: CoinFamilyEnum) => {
-        try {
-            let address_coins: any = await WalletModel.findAll({
-                attributes: ["coin_id", "wallet_address"],
-                where: {
-                    wallet_address: wallet_address,
-                    status: 1,
-                    coin_family: coin_family
-                },
-                include: [{
-                    model: CoinsModel,
-                    attributes: ["coin_id", "coin_name", "coin_symbol", "coin_family", "is_token", "token_type", "token_address"],
-                    as: "coin_data",
-                    required: true,
-                    where: {
-                        coin_status: 1,
-                    },
-                }],
-            })
-            for (let i = 0; i < address_coins.length; i++) {
-                await this.Update_Balance(address_coins[i].wallet_address, address_coins[i].coin_data);
-            }
-            return 1;
-
-        } catch (err: any) {
-            console.error(`WalletHelper Update_all_active_coin_balance error >>>`, err);
-            return 0;
-
-        }
-    }
-
-
-
-    // update balance queue
 
 
     public async Update_Balance_Queue(wallet_address: string, coin: CoinInterface) {

@@ -1,10 +1,9 @@
 import { config } from "../config/config";
-import { BlockChainStatusEnum, BooleanEnum, CoinFamilyEnum, NotificationTypeEnum, TokenStandard, TrnxTypeEnum } from "../enum";
+import { BlockChainStatusEnum, BooleanEnum, NotificationTypeEnum, TokenStandard, TrnxTypeEnum } from "../enum";
 import { NotificationInterface, TrnxHistoryModel } from "../models";
-import { Utility_Helper, Wallet_Helper, Blockchain_Helper, Db_Helper } from "../helpers";
+import { Utility_Helper, Wallet_Helper } from "../helpers";
 import cosmosProcessHelper from "./process.helper";
 import { Op } from "sequelize";
-import { global_helper } from "../helpers/global_helper";
 import kafkaHelper from "../config/kafka.helper";
 import { pending_trnx } from "../interfaces/global_helper";
 import fetch from 'node-fetch';
@@ -12,21 +11,82 @@ import fetch from 'node-fetch';
 class CosmosTxStatusUpdateProcess {
 
   public startTxStatusUpdateQueue = async () => {
-    let consumer = await kafkaHelper.kafka.consumer({ groupId: config.KAFKA_TRANSACTIONS.COSMOS_PENDING_WITHDRAWAL_TX_GROUP_ID });
-    await consumer.subscribe({ topic: config.KAFKA_TRANSACTIONS.COSMOS_PENDING_WITHDRAWAL_TX_TOPIC, fromBeginning: true });
-    await consumer.run({
-      eachMessage: async ({ topic, partition, message }: { topic: any, partition: any, message: any }) => {
-        console.log("🚀 ~ startTxStatusUpdateQueue topic >>>>", topic);
-        console.log("🚀 ~ startTxStatusUpdateQueue message.value >>>>", message.value.toString());
-        await this.getTx(JSON.parse(message.value.toString()))
+    let consumer: any = null;
+    let isConnected = false;
+
+    const connectConsumer = async () => {
+      try {
+
+        if (consumer) {
+          await consumer.disconnect();
+        }
+
+        consumer = await kafkaHelper.kafka.consumer({
+          groupId: config.KAFKA_TRANSACTIONS.COSMOS_PENDING_WITHDRAWAL_TX_GROUP_ID,
+          // Add session timeout for better error handling
+          sessionTimeout: 30000,
+          // Add heartbeat interval
+          heartbeatInterval: 3000,
+        });
+
+        await consumer.subscribe({
+          topic: config.KAFKA_TRANSACTIONS.COSMOS_PENDING_WITHDRAWAL_TX_TOPIC,
+          fromBeginning: true, // ✅ Changed to false to prevent reprocessing
+        });
+
+        await consumer.run({
+          // ✅ Add proper autoCommit configuration
+          autoCommit: true,
+          autoCommitInterval: 5000,
+          autoCommitThreshold: 100,
+
+          eachMessage: async ({ topic, partition, message }: { topic: any; partition: any; message: any }) => {
+            try {
+              console.log("🚀 ~ startTxStatusUpdateQueue topic >>>>", topic);
+              console.log("🚀 ~ startTxStatusUpdateQueue message.value >>>>", message.value.toString());
+              await this.getTx(JSON.parse(message.value.toString()))
+
+            } catch (error) {
+              console.error(`❌ Error processing message:`, error);
+            }
+          },
+        });
+        isConnected = true;
+      } catch (error) {
+        console.error(`❌ Failed to connect consumer:`, error);
+        isConnected = false;
+        throw error;
       }
-    }).catch((err: Error) => {
-      console.log("🔥 ~ ~ startTxStatusUpdateQueue error", err);
-    });
+    };
+
+    // ✅ Add reconnection logic
+    const startWithReconnection = async () => {
+      while (true) {
+        try {
+          if (!isConnected) {
+            console.log(`🔄 Attempting to connect consumer startTxStatusUpdateQueue...`);
+            await connectConsumer();
+          }
+
+          // Keep the consumer alive
+          await new Promise(resolve => setTimeout(resolve, 30000));
+
+        } catch (error) {
+          console.error(`❌ Consumer connection error:`, error);
+          isConnected = false;
+
+          // Wait before retrying
+          console.log(`⏳ Waiting 10 seconds before reconnecting...`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+      }
+    };
+
+    // Start the consumer with reconnection
+    await startWithReconnection();
   };
 
   public getTx = async (data: pending_trnx) => {
-    console.log('Pending data >>>>>>>', data);
     try {
       // Cosmos: fetch tx status from tendermint endpoint
       const txHash = data.tx_id.startsWith('0x') ? data.tx_id : '0x' + data.tx_id;
@@ -39,7 +99,6 @@ class CosmosTxStatusUpdateProcess {
 
       if (result && result.result && result.result.tx_result) {
         const txResult = result.result.tx_result;
-        console.log("🚀 ~ CosmosTxStatusUpdateProcess ~ getTx= ~ txResult:", txResult)
         const status = txResult.code === 0 ? "success" : "failed";
         const txid = result.result.hash;
         let fromAddress = "";
@@ -67,7 +126,6 @@ class CosmosTxStatusUpdateProcess {
             if (event.type === "tx" && Array.isArray(event.attributes)) {
               for (const attr of event.attributes) {
                 if (attr.key === "fee" && attr.value) {
-                  // attr.value is like "10473040000000000tics"
                   const feeStr = attr.value.replace('tics', '');
                   tx_fee = Number(feeStr) / 1e18; // convert to TICS (assuming 18 decimals)
                   break;
@@ -146,7 +204,6 @@ class CosmosTxStatusUpdateProcess {
             added_by: coin_data.added_by
           }
         };
-        console.log(trx_data, "withdrwal");
         await this.updateBroadcastTx(trx_data);
       } else {
         console.log('not coin present in redis or database');
@@ -181,9 +238,12 @@ class CosmosTxStatusUpdateProcess {
           if (tx_type == TrnxTypeEnum.SWAP) {
             console.log("transaction >>", tx_type, "transaction id ", tx_row_id)
           }
+          const addresses = [from_address, to_address].filter(Boolean);
+          const results = await cosmosProcessHelper.getMultipleKeyValuePairs(`${config.COSMOS_WALLET_ADDRESS}`, addresses);
+          if (results) {
+            const [addressWithdraw, addressDeposit]: any = results as string[];
 
-          const AddressWithdraw: any = await cosmosProcessHelper.check_our_wallet_address(from_address);
-          if (AddressWithdraw) {
+          if (addressWithdraw) {
             /** update withdraw user eth balance */
             if (tx_type !== TrnxTypeEnum.DAPP) {
               const native_coin: any = await cosmosProcessHelper.checkIfContract('NativeCoin');
@@ -192,8 +252,6 @@ class CosmosTxStatusUpdateProcess {
                 /** Update User ERC20 Token Balance */
                 await Wallet_Helper.Update_Balance(from_address, trx_data?.coin);
               }
-            // } else { // Entered in DAPP transactioin
-            //   await Wallet_Helper.Update_all_active_coin_balance(from_address, coin_family);
             }
 
             let trnxTypeW: string = "Withdraw";
@@ -233,9 +291,8 @@ class CosmosTxStatusUpdateProcess {
             };
             Utility_Helper.SendNotification(notifData);
           }
-          const Addressdeposit: any = await cosmosProcessHelper.check_our_wallet_address(to_address);
-          if (Addressdeposit) {
-            const to_user_id: number = Addressdeposit ? Addressdeposit.user_id : 0;
+          if (addressDeposit) {
+            const to_user_id: number = addressDeposit ? JSON.parse(addressDeposit)?.user_id : 0;
             /** update to adrs wallet balance */
             if (to_address !== from_address) {
               if (tx_type !== TrnxTypeEnum.DAPP) {
@@ -244,10 +301,7 @@ class CosmosTxStatusUpdateProcess {
                     to_address, /// wallet_address,
                     trx_data?.coin /// coin
                   );
-                  // await global_helper.check_coin_in_wallet(to_address, trx_data?.coin, balance)
                 }
-              // } else {
-              //   await Wallet_Helper.Update_all_active_coin_balance(to_address, coin_family);
               }
             }
             const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
@@ -272,6 +326,7 @@ class CosmosTxStatusUpdateProcess {
           }
 
           return true;
+        }
 
         } else if (status_tx == BlockChainStatusEnum.FAILED) {
           let trnxTypeW: string = "Withdraw";
