@@ -1,12 +1,11 @@
 import { config } from "../config/config";
 import { BlockChainStatusEnum, BooleanEnum, NotificationTypeEnum, TokenStandard, TrnxTypeEnum } from "../enum";
 import { NotificationInterface, TrnxHistoryModel } from "../models";
-import { utilityHelper, walletHelper } from "../helpers";
+import { blockchainHelper, utilityHelper, walletHelper } from "../helpers";
 import cosmosProcessHelper from "./process.helper";
 import { Op } from "sequelize";
 import kafkaHelper from "../config/kafka";
 import { pending_trnx } from "../interfaces/global_helper";
-import fetch from 'node-fetch';
 
 class UpdateInteralTransactionStatus {
 
@@ -90,12 +89,20 @@ class UpdateInteralTransactionStatus {
     try {
       // Cosmos: fetch tx status from tendermint endpoint
       const txHash = data.tx_id.startsWith('0x') ? data.tx_id : '0x' + data.tx_id;
-      const url = `https://tendermint-internal.qubetics.com/tx?hash=${txHash}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tx from tendermint: ${response.statusText}`);
+      const response = await blockchainHelper.fetchFromCosmosApi(config.NODE.COSMOS_RPC_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        params: {
+          path: `/tx?hash=${txHash}`,
+        },
+      });
+
+      if (!response?.ok) {
+        throw new Error(`Failed to fetch tx from tendermint: ${response?.statusText}`);
       }
-      const result = await response.json();
+      const result = await response?.json();
 
       if (result && result.result && result.result.tx_result) {
         const txResult = result.result.tx_result;
@@ -154,7 +161,7 @@ class UpdateInteralTransactionStatus {
             token_address: data.token_address,
           },
           status,
-          txid,
+          txid: txid.includes('0x') ? txid : '0x' + txid,
           gasReverted: gasReverted !== undefined ? gasReverted : undefined,
           fromAddress: fromAddress ? fromAddress.toLowerCase() : "",
           tx_fee

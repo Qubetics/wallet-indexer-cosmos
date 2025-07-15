@@ -5,6 +5,7 @@ import { TicsNativeOldBlockModel } from "../models";
 import { globalHelper } from "../helpers/global";
 import kafkaHelper from "../config/kafka";
 import fetch from 'node-fetch';
+import { blockchainHelper } from "../helpers";
 class ProcessedBlocks {
     public minBlockConfirmation: number;
     public swap: string | null;
@@ -70,9 +71,16 @@ class ProcessedBlocks {
     public async getTxFromBlock(blockId: number, key: string) {
         try {
             // Use the Cosmos REST API to fetch block transactions
-            const url = `https://swagger-internal.qubetics.com/cosmos/tx/v1beta1/txs/block/${blockId}`;
-            const response = await fetch(url);
-            if (!response.ok) {
+            const response = await blockchainHelper.fetchFromCosmosApi(config.NODE.COSMOS_SWAGGER_URL, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                params: {
+                    path: `/cosmos/tx/v1beta1/txs/block/${blockId}`,
+                },
+            });
+            if (!response?.ok) {
                 console.log("No block info from Cosmos REST API");
                 await TicsNativeOldBlockModel.create({
                     block_number: blockId,
@@ -83,7 +91,7 @@ class ProcessedBlocks {
                 });
                 return;
             }
-            const blockInfo = await response.json();
+            const blockInfo = await response?.json();
 
             // Defensive: check for txs array
             const txs = Array.isArray(blockInfo?.txs) ? blockInfo.txs : [];

@@ -185,10 +185,16 @@ class ProcessedBlockTransactions {
             }
             // Use Tendermint REST API to fetch transaction by hash
             const txHash = data.tx_id.startsWith('0x') ? data.tx_id : '0x' + data.tx_id;
-            const url = `https://tendermint-internal.qubetics.com/tx?hash=${txHash}`;
-            const response = await fetch(url);
-
-            if (!response.ok) {
+            const response = await blockchainHelper.fetchFromCosmosApi(config.NODE.COSMOS_RPC_URL, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                params: {
+                    path: `/tx?hash=${txHash}`,
+                },
+            });
+            if (!response?.ok) {
                 // Transaction not found, retry if under limit
                 if (Number(data.retry_count) < 6) {
                     data.retry_count = Number(data.retry_count) + 1;
@@ -197,7 +203,7 @@ class ProcessedBlockTransactions {
                 return false;
             }
 
-            const txResponse = await response.json();
+            const txResponse = await response?.json();
             // Defensive: check for tx_result and code
             const txResult = txResponse?.result?.tx_result;
             if (txResult?.code === 0) {
@@ -326,8 +332,8 @@ class ProcessedBlockTransactions {
                 const txFee = await utilityHelper.bigNumberSafeMath(gasUsed, '*', effectiveGasPrice);
                 const gasInCosmos = blockchainHelper.convertToWei(txFee);
 
-                const cosmosValue = blockchainHelper.convertToWei((data.value ? data.value : 0));
-                const amount = parseFloat(cosmosValue.toString());
+                // const cosmosValue = blockchainHelper.convertToWei((data.value ? data.value : 0));
+                const amount = parseFloat(data.value);
 
                 const txData: TxType = {
                     txId: data.tx_id,

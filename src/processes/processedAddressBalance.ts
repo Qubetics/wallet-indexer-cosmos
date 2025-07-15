@@ -61,7 +61,7 @@ class processedAddressBalance {
             while (true) {
                 try {
                     if (!isConnected) {
-                        console.log(`🔄 Attempting to connect consumer startBlockTxQueue...`);
+                        console.log(`🔄 Attempting to connect consumer consumeWalletBalanceUpdateQueue...`);
                         await connectConsumer();
                     }
 
@@ -82,20 +82,6 @@ class processedAddressBalance {
         // Start the consumer with reconnection
         await startWithReconnection();
     };
-
-    // public updateWalletBalance = async () => {
-    //     let consumer = await kafkaHelper.kafka.consumer({ groupId: config.config.KAFKA_BALANCE.COSMOS_PENDING_BALANCE_UPDATE_GROUP_ID });
-    //     await consumer.subscribe({ topic: this.cosmos_pending_balance_update_topic, fromBeginning: true });
-    //     await consumer.run({
-    //         eachMessage: async ({ topic, partition, message }: { topic: any, partition: any, message: any }) => {
-    //             console.log("🚀 ~ startTxStatusUpdateQueue topic >>>>", topic);
-    //             console.log("🚀 ~ startTxStatusUpdateQueue message.value >>>>", message.value.toString());
-    //             await this.updateBalance(JSON.parse(message.value.toString()))
-    //         }
-    //     }).catch((err: Error) => {
-    //         console.log("🔥 ~ ~ startTxStatusUpdateQueue error", err);
-    //     });
-    // };
 
     public updateBalance = async (data: any) => {
         try {

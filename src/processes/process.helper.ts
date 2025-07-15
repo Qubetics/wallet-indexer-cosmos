@@ -4,6 +4,7 @@ import { promisify } from "util";
 import { config } from "../config/config";
 import { globalHelper } from "../helpers/global";
 import fetch from 'node-fetch';
+import { blockchainHelper } from "../helpers";
 
 class CosmosProcessHelper {
   public CoinsInterface: CoinInterface[];
@@ -36,11 +37,20 @@ class CosmosProcessHelper {
     try {
       // Use node-fetch for HTTP requests since fetch is not defined in Node.js by default
       // Fetch latest Cosmos block from REST API
-      const response = await fetch("https://swagger-internal.qubetics.com/cosmos/base/tendermint/v1beta1/blocks/latest");
-      if (!response.ok) {
-        throw new Error(`Failed to fetch latest Cosmos block: ${response.statusText}`);
+      const response = await blockchainHelper.fetchFromCosmosApi(config.NODE.COSMOS_SWAGGER_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        params: {
+          path: "/cosmos/base/tendermint/v1beta1/blocks/latest",
+        },
+      });
+
+      if (!response?.ok) {
+        throw new Error(`Failed to fetch latest Cosmos block: ${response?.statusText}`);
       }
-      const data = await response.json();
+      const data = await response?.json();
       let latestBlockStr = data?.block?.header?.height || data?.sdk_block?.header?.height;
       if (!latestBlockStr) {
         throw new Error("Could not find block height in Cosmos REST API response");

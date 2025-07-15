@@ -20,7 +20,8 @@ class ProcessedInternalTransactions {
         status: 'completed',
         [Op.or]: [{ blockchain_status: null }, { blockchain_status: BlockChainStatusEnum.PENDING }],
         req_type: { [Op.notIn]: ['TRANSAK', 'ALCHEMY', 'MERCURYO'] },
-        coin_family: config.STATIC_COIN_FAMILY.TICS
+        coin_family: config.STATIC_COIN_FAMILY.TICS,
+        from_adrs: { [Op.like]: 'qubetics%' }
       }
     })
 
