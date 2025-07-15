@@ -1,15 +1,15 @@
 import { config } from "../config";
-import kafkaHelper from "../config/kafka.helper";
+import kafkaHelper from "../config/kafka";
 import { CoinFamilyEnum } from "../enum";
 import { CoinInterface, CoinsModel, TicsNativeAddressModel } from "../models";
 import WalletModel from "../models/model/model.wallets";
-import { Blockchain_Helper } from "./blockchain.helper";
-import { Utility_Helper } from "./utility.helper";
+import { blockchainHelper } from "./blockchain";
+import { utilityHelper } from "./utility";
 
 class WalletHelper {
     public cosmos_pending_balance_update_topic = config.config.KAFKA_BALANCE.COSMOS_PENDING_BALANCE_UPDATE_TOPIC;
 
-    Fetch_Balance = async (
+    fetchBalance = async (
         address: string,
         coin: CoinInterface,
     ) => {
@@ -18,22 +18,22 @@ class WalletHelper {
             if (coin) {
                 switch (coin.coin_family) {
                     case CoinFamilyEnum.TICS:
-                        balance = await Blockchain_Helper.Coin_Fetch_Balance(address);
+                        balance = await blockchainHelper.coinFetchBalance(address);
                         break;
                     default:
                         balance = 0;
                         break;
                 }
             }
-            return balance !== null ? Number(await Utility_Helper.exponentialToDecimal(balance)) : null;
+            return balance !== null ? Number(await utilityHelper.exponentialToDecimal(balance)) : null;
         } catch (error: any) {
-            console.error(`WalletHelper Fetch_Balance error >>>`, error);
+            console.error(`WalletHelper fetchBalance error >>>`, error);
             return null;
         }
     }
 
 
-    Update_Balance = async (
+    updateBalance = async (
         wallet_address: string,
         coin: CoinInterface
     ) => {
@@ -42,14 +42,18 @@ class WalletHelper {
                 console.error(`wallet_address missing >>> `);
                 return false;
             }
+            if (!coin) {
+                console.error(`coin missing >>> `);
+                return false;
+            }
             /* fatch wallet balnce */
-            let balance: number | null = await this.Fetch_Balance(
+            const balance: number | null = await this.fetchBalance(
                 wallet_address,
                 coin
             );
-            
+
             if (balance !== null) {
-                const wallet_data : any = await TicsNativeAddressModel.findOne({
+                const wallet_data: any = await TicsNativeAddressModel.findOne({
                     where: {
                         address: wallet_address,
                     },
@@ -66,7 +70,7 @@ class WalletHelper {
 
                     }, {
                         where: {
-                            wallet_id: wallet_data?.wallet?.wallet_id,   
+                            wallet_id: wallet_data?.wallet?.wallet_id,
                         }
                     });
                 }
@@ -82,20 +86,24 @@ class WalletHelper {
             }
             return balance;
         } catch (error: any) {
-            console.error(`WalletHelper Update_Balance error >>>`, error);
+            console.error(`WalletHelper updateBalance error >>>`, error);
             return null;
         }
     }
 
 
-    public async Update_Balance_Queue(wallet_address: string, coin: CoinInterface) {
+    public async updateQueueAddressBalance(wallet_address: string, coin: CoinInterface) {
         try {
             if (!wallet_address) {
                 console.error(`wallet_address missing >>> `);
                 return false;
             }
+            if (!coin) {
+                console.error(`coin missing >>> `);
+                return false;
+            }
             /* fatch wallet balnce */
-            let balance: number | null = await this.Fetch_Balance(
+            let balance: number | null = await this.fetchBalance(
                 wallet_address,
                 coin
             );
@@ -104,9 +112,9 @@ class WalletHelper {
             }
             return null;
         } catch (err: any) {
-            console.error(`WalletHelper Update_Balance error >>>`, err);
+            console.error(`WalletHelper updateBalance error >>>`, err);
             return null;
         }
     }
 }
-export let Wallet_Helper = new WalletHelper();
+export let walletHelper = new WalletHelper();

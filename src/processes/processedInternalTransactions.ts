@@ -2,13 +2,13 @@ import { config } from "../config/config";
 import { Op } from "sequelize";
 import { BlockChainStatusEnum } from "../enum";
 import { CoinsModel, TrnxHistoryModel } from "../models";
-import kafkaHelper from "../config/kafka.helper";
+import kafkaHelper from "../config/kafka";
 import { pending_trnx } from "../interfaces/global_helper";
 
-class CosmosPendingWithdrawalProcess {
+class ProcessedInternalTransactions {
   public cosmos_pending_withdrawal_tx_topic = config.KAFKA_TRANSACTIONS.COSMOS_PENDING_WITHDRAWAL_TX_TOPIC;
 
-  public getTransactionFromDB = async () => {
+  public getInternalPendingTransactions = async () => {
     let tx: any = await TrnxHistoryModel.findAll({
       attributes: ["tx_id", "coin_id"],
       include: [{
@@ -43,4 +43,4 @@ class CosmosPendingWithdrawalProcess {
   };
 }
 
-export const cosmosPendingWithdrawalProcess = new CosmosPendingWithdrawalProcess();
+export const processedInternalTransactions = new ProcessedInternalTransactions();

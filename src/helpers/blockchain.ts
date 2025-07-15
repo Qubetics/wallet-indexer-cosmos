@@ -1,13 +1,13 @@
-import { Utility_Helper } from "./utility.helper";
+import { utilityHelper } from "./utility";
 import { ethers } from 'ethers';
 import fetch from 'node-fetch';
 
 class BlockchainHelper {
     constructor() {
-      this.initialize();
+        this.initialize();
     }
-  
-    public initialize() {}
+
+    public initialize() { }
 
 
     convertToWei = (value: number | string | bigint): string => {
@@ -18,7 +18,7 @@ class BlockchainHelper {
             return "0";
         }
     }
-    public Coin_Fetch_Balance = async (
+    public coinFetchBalance = async (
         address: string
     ) => {
         try {
@@ -36,20 +36,20 @@ class BlockchainHelper {
             }
             if (balanceObj && balanceObj.amount) {
                 // Cosmos tics has 18 decimals
-                const tokenBalance = await Utility_Helper.bigNumberSafeMath(
+                const tokenBalance = await utilityHelper.bigNumberSafeMath(
                     balanceObj.amount,
                     "/",
                     Math.pow(10, 18)
                 );
-                const coinBalance: string = await Utility_Helper.exponentialToDecimal(tokenBalance)
+                const coinBalance: string = await utilityHelper.exponentialToDecimal(tokenBalance)
                 console.log("Balance:", coinBalance);
                 return Number(coinBalance);
             }
             return 0;
         } catch (error: any) {
-            console.error(`Cosmos_Helper Coin_Fetch_Balance error >>`, error);
+            console.error(`Cosmos_Helper coinFetchBalance error >>`, error);
             return null;
         }
     }
 }
-export let Blockchain_Helper = new BlockchainHelper();
+export let blockchainHelper = new BlockchainHelper();

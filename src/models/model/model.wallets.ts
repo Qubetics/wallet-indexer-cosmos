@@ -7,7 +7,7 @@ interface WalletInstance
   extends Model<WalletInterface, WalletCreationModel>,
   WalletInterface { }
 
-let dataObj = {
+const dataObj = {
   wallet_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -56,7 +56,7 @@ let dataObj = {
   },
 };
 
-let dataObjIndex = {
+const dataObjIndex = {
   indexes: [
     {
       unique: false,

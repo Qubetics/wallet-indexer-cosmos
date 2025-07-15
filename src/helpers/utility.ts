@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import {
-    Db_Helper
+    dbHelper
 } from ".";
 
 import { NotificationModel } from "../models";
@@ -83,7 +83,7 @@ class UtilityHelper {
     public async SendNotification(data: any) {
         try {
             let toUserId: number = data.to_user_id ? data.to_user_id : 0;
-            let deviceTokens: any = await Db_Helper.GetDeviceTokens(toUserId, data.wallet_address, data.coin_family);
+            let deviceTokens: any = await dbHelper.GetDeviceTokens(toUserId, data.wallet_address, data.coin_family);
             let finalDeviceTokens: any = [];
 
             for await (let deviceToken of deviceTokens) {
@@ -158,4 +158,4 @@ class UtilityHelper {
         }
     }
 }
-export let Utility_Helper = new UtilityHelper();
+export let utilityHelper = new UtilityHelper();

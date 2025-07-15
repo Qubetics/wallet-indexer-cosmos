@@ -2,7 +2,7 @@ import { CoinInterface, TicsNativeOldBlockModel, WalletInterface } from "../mode
 import redisClient from "../config/redis";
 import { promisify } from "util";
 import { config } from "../config/config";
-import { global_helper } from "../helpers/global_helper";
+import { globalHelper } from "../helpers/global";
 import fetch from 'node-fetch';
 
 class CosmosProcessHelper {
@@ -61,9 +61,10 @@ class CosmosProcessHelper {
       }
     } catch (err: any) {
       console.error("Error in setBlocks (Cosmos)", err);
-      await global_helper.save_error_logs('COSMOS_setBlocks', err.message || String(err));
+      await globalHelper.save_error_logs('COSMOS_setBlocks', err.message || String(err));
     }
   }
+
   public async setKeyValuePair(keyName: string, field: string, value: string) {
     try {
       redisClient.hset(keyName, this.safeToUpperCase(field), value);
@@ -71,7 +72,8 @@ class CosmosProcessHelper {
       console.error('setKeyValuePair >>>', err);
     }
   }
-  public async diff_blocks_add_in_db(current_block: number, old_block: number) {
+
+  public async diffBlocksAddInDb(current_block: number, old_block: number) {
     try {
       let value_exist: any = await this.getKeyValuePair(config.REDISKEYS.ALL_PROCESSES, config.REDISKEYS.NODE_ALERT_COSMOS)
       if (value_exist) {
@@ -80,7 +82,7 @@ class CosmosProcessHelper {
           await this.setKeyValuePair(config.REDISKEYS.ALL_PROCESSES, config.REDISKEYS.NODE_ALERT_COSMOS, setvalue.toString())
           if (Number(value_exist) == 0 || Number(value_exist) == 5 || Number(value_exist) == 10 || Number(value_exist) == 20 || Number(value_exist) == 50 || Number(value_exist) == 75 || Number(value_exist) == 100) {
             let email_body = `<p>Cosmos Node Issue ${Number(value_exist)}</p><p>Current block running = ${current_block}.</p><p>Old Block = ${old_block}.</p>`;
-            await global_helper.send_mail(config.NODE_ISSUE_ALERT_EMAIL, email_body, `Cosmos Node Issue ${Number(value_exist)}`);
+            await globalHelper.send_mail(config.NODE_ISSUE_ALERT_EMAIL, email_body, `Cosmos Node Issue ${Number(value_exist)}`);
           } else {
             console.log("no email")
           }
@@ -96,7 +98,7 @@ class CosmosProcessHelper {
       return true;
     } catch (err: any) {
       console.error("💥 ~ Error in diff_blocks_add_in_redis.", err)
-      await global_helper.save_error_logs('COSMOS_diff_blocks_add_in_db', err.message)
+      await globalHelper.save_error_logs('COSMOS_diff_blocks_add_in_db', err.message)
       return false;
     }
   }
@@ -130,7 +132,7 @@ class CosmosProcessHelper {
       let token_data: any = await this.getKeyValuePair(config.TOKEN_TYPE_COSMOS, address);
       return JSON.parse(token_data);
     } catch (err: any) {
-      console.error('check_our_wallet_address >>>>>', err);
+      console.error('checkOurWalletAddress >>>>>', err);
       return null;
     }
   };
@@ -149,7 +151,7 @@ class CosmosProcessHelper {
     }
   }
 
-  public check_our_wallet_address = async (address: string) => {
+  public checkOurWalletAddress = async (address: string) => {
     try {
       let wallet_data: any = await this.getKeyValuePair(config.COSMOS_WALLET_ADDRESS, address);
       if (wallet_data) {
@@ -157,11 +159,11 @@ class CosmosProcessHelper {
       }
       return JSON.parse(wallet_data);
     } catch (error: any) {
-      console.error('check_our_wallet_address >>>>>', error);
+      console.error('checkOurWalletAddress >>>>>', error);
       return null;
     }
   };
-  
+
   public behindBlocks = async () => {
     try {
       let behindBlocks: any = await TicsNativeOldBlockModel.findOne({

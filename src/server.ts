@@ -1,16 +1,16 @@
-import kafkaHelper from "./config/kafka.helper";
-import { cosmosWithdrawDepositProcess, cosmosPendingWithdrawalProcess, cosmosTxStatusUpdateProcess, cosmosBlocksProcess, cosmosTxStatusDepositWithdraw, cosmosBalanceUpdate } from "./processes/index.process"
+import kafkaHelper from "./config/kafka";
+import { procesesDepositWithdrawQueue, processedInternalTransactions, updateInteralTransactionStatus, processedBlocks, processedQueueTransactions, processedAddressBalance } from "./processes/index.process"
 import schedule from "node-schedule";
 class CosmosStartProcess {
   constructor() {
     this.connectKafka();
-    this.readBlockProcess()
+    this.readBlocks()
     this.readSpecificBlock()
     this.consumeReadBlockQueue()
     this.consumeReadBehindBlockQueue()
     this.cosmosWithdrawDepositProcess();
-    this.getPendingWithdrawalTx();
-    this.updateTxStatus();
+    this.addInternalTransactionsInQueue();
+    this.updateInternalTransactionsStatus();
     this.cosmosUpdateBalance();
   }
 
@@ -18,45 +18,45 @@ class CosmosStartProcess {
     await kafkaHelper.connect();
   }
 
-  public readBlockProcess() {
+  public readBlocks() {
     schedule.scheduleJob("*/8 * * * * *", async function () {
-      await cosmosBlocksProcess.getBlocks();
-      await cosmosBlocksProcess.readBehindBlock()
+      await processedBlocks.getBlocks();
+      await processedBlocks.readBehindBlock()
     });
   }
   public readSpecificBlock() {
     schedule.scheduleJob('*/1 * * * *', async function () {
-      await cosmosBlocksProcess.readSpecificBlock();
+      await processedBlocks.readSpecificBlock();
     })
   }
   public consumeReadBlockQueue() {
     setTimeout(async () => {
-      await cosmosTxStatusDepositWithdraw.startBlockTxQueue();
+      await processedQueueTransactions.startBlockTxQueue();
     }, 10000);
   }
   public consumeReadBehindBlockQueue() {
     setTimeout(async () => {
-      await cosmosTxStatusDepositWithdraw.startBehindBlockTxQueue();
+      await processedQueueTransactions.startBehindBlockTxQueue();
     }, 10000);
   }
   public async cosmosWithdrawDepositProcess() {
     setTimeout(async () => {
-      await cosmosWithdrawDepositProcess.startDepositQueue();
+      await procesesDepositWithdrawQueue.startDepositQueue();
     }, 10000);
   }
-  public getPendingWithdrawalTx() {
+  public addInternalTransactionsInQueue() {
     setTimeout(async () => {
-      await cosmosPendingWithdrawalProcess.getTransactionFromDB();
+      await processedInternalTransactions.getInternalPendingTransactions();
     });
   }
-  public async updateTxStatus() {
+  public async updateInternalTransactionsStatus() {
     setTimeout(async () => {
-      await cosmosTxStatusUpdateProcess.startTxStatusUpdateQueue();
+      await updateInteralTransactionStatus.consumeTxStatusUpdateQueue();
     }, 10000);
   }
   public async cosmosUpdateBalance() {
     setTimeout(async () => {
-      await cosmosBalanceUpdate.default.updateWalletBalance();
+      await processedAddressBalance.default.consumeWalletBalanceUpdateQueue();
     }, 10000);
   }
 }

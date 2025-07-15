@@ -1,23 +1,23 @@
 import { config } from "../config/config";
-import kafkaHelper from "../config/kafka.helper";
-import { Blockchain_Helper, Utility_Helper } from "../helpers";
+import kafkaHelper from "../config/kafka";
+import { blockchainHelper, utilityHelper } from "../helpers";
 import { blocks_trnx } from "../interfaces/global_helper";
 import cosmosProcessHelper from "./process.helper";
-import { TxType } from "../types/ERC20Tokens.types";
+import { TxType } from "../types/erc20Tokens.Types";
 import { TrnxTypeEnum } from "../enum";
-import { global_helper } from "../helpers/global_helper";
+import { globalHelper } from "../helpers/global";
 import { TransactionReceipt } from "ethers";
 import fetch from 'node-fetch';
 import { sha256 } from "@cosmjs/crypto"
 import { toHex } from "@cosmjs/encoding"
-class queue_transactions {
+class ProcessedBlockTransactions {
     public cosmos_block_tx_topic = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_TOPIC;
     public cosmos_block_tx_group_id = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_GROUP_ID;
     public cosmos_behind_block_tx_topic = config.KAFKA_BLOCKS.COSMOS_BEHIND_BLOCK_TX_TOPIC;
     public cosmos_behind_block_tx_group_id = config.KAFKA_BLOCKS.COSMOS_BEHIND_BLOCK_TX_GROUP_ID;
     public deposit_withdraw_topic = config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_TOPIC;
 
-    constructor() {}
+    constructor() { }
 
     public startBlockTxQueue = async () => {
         let consumer: any = null;
@@ -53,7 +53,7 @@ class queue_transactions {
                         try {
                             console.log("🚀 ~ startBlockTxQueue topic >>>>", topic);
                             console.log("🚀 ~ startBlockTxQueue message.value >>>>", message.value.toString());
-                            await this.readTrnx(JSON.parse(message.value.toString()))
+                            this.readTrnx(JSON.parse(message.value.toString()))
 
                         } catch (error) {
                             console.error(`❌ Error processing message:`, error);
@@ -107,7 +107,7 @@ class queue_transactions {
                 }
 
                 consumer = await kafkaHelper.kafka.consumer({
-                    groupId: this.cosmos_behind_block_tx_group_id  ,
+                    groupId: this.cosmos_behind_block_tx_group_id,
                     // Add session timeout for better error handling
                     sessionTimeout: 30000,
                     // Add heartbeat interval
@@ -129,7 +129,7 @@ class queue_transactions {
                         try {
                             console.log("🚀 ~ startBehindBlockTxQueue topic >>>>", topic);
                             console.log("🚀 ~ startBehindBlockTxQueue message.value >>>>", message.value.toString());
-                            await this.readTrnx(JSON.parse(message.value.toString()))
+                            this.readTrnx(JSON.parse(message.value.toString()))
 
                         } catch (error) {
                             console.error(`❌ Error processing message:`, error);
@@ -180,7 +180,7 @@ class queue_transactions {
                 const hashBytes = sha256(txRawBuffer);
                 computedTxHash = '0x' + toHex(hashBytes);
                 data.tx_id = computedTxHash;
-            }else{
+            } else {
                 return;
             }
             // Use Tendermint REST API to fetch transaction by hash
@@ -196,7 +196,7 @@ class queue_transactions {
                 }
                 return false;
             }
-            
+
             const txResponse = await response.json();
             // Defensive: check for tx_result and code
             const txResult = txResponse?.result?.tx_result;
@@ -279,19 +279,19 @@ class queue_transactions {
                     blockNumber: data.block_number,
                     logs: [], // Not EVM logs, but we can pass empty or custom if needed
                     gasUsed: txResult?.gas_used || 0,
-                    gasPrice: txResult?.gas_price ||1, // Not available in Cosmos, set to 0 or estimate if needed
+                    gasPrice: txResult?.gas_price || 1, // Not available in Cosmos, set to 0 or estimate if needed
                     from: fromAddress,
                     to: toAddress,
                     value: finalAmount,
                     trnx_fee: trnx_fee
                 };
-                
+
                 // Optionally, you could pass from/to/value/trnx_fee in data for downstream
                 data.fromAddress = fromAddress;
                 data.toAddress = toAddress;
                 data.value = finalAmount;
-                
-                await cosmosTxStatusDepositWithdraw.check_cosmos_deposit(data, txReceipt);
+
+                await processedQueueTransactions.check_cosmos_deposit(data, txReceipt);
             } else if (txResult?.code !== undefined) {
                 // Transaction failed
                 console.log("(tx_result.code !== 0) Transaction failed for hash:", txHash);
@@ -323,10 +323,10 @@ class queue_transactions {
             ) {
                 const gasUsed = txReceipt.gasUsed ? txReceipt.gasUsed : 0;
                 const effectiveGasPrice: number = Number(txReceipt.gasPrice) || 0;
-                const txFee = await Utility_Helper.bigNumberSafeMath(gasUsed, '*', effectiveGasPrice);
-                const gasInCosmos = Blockchain_Helper.convertToWei(txFee);
+                const txFee = await utilityHelper.bigNumberSafeMath(gasUsed, '*', effectiveGasPrice);
+                const gasInCosmos = blockchainHelper.convertToWei(txFee);
 
-                const cosmosValue = Blockchain_Helper.convertToWei((data.value ? data.value : 0));
+                const cosmosValue = blockchainHelper.convertToWei((data.value ? data.value : 0));
                 const amount = parseFloat(cosmosValue.toString());
 
                 const txData: TxType = {
@@ -344,7 +344,7 @@ class queue_transactions {
             }
         } catch (error: any) {
             console.error("💥 ~ ~ check_eth_deposit error", (error as Error).message);
-            await global_helper.save_error_logs('COSMOS_check_deposit', error.message)
+            await globalHelper.save_error_logs('COSMOS_check_deposit', error.message)
 
         }
     }
@@ -366,7 +366,7 @@ class queue_transactions {
                 }
             }
             if (txData.txType !== null) {
-                await cosmosTxStatusDepositWithdraw.addTxToQueue(
+                await processedQueueTransactions.addTxToQueue(
                     txData,
                     this.deposit_withdraw_topic || ""
                 );
@@ -375,16 +375,16 @@ class queue_transactions {
             console.error("Error in checkAddressInDB>>", err)
         }
     }
-   
+
     public async addTxToQueue(data: TxType, queueName: string) {
         try {
             await kafkaHelper.produceMessage(queueName, data)
         } catch (err: any) {
             console.error("addTxToQueue", (err as Error).message);
-            await global_helper.save_error_logs('COSMOS_checkAddressInDB', err.message)
+            await globalHelper.save_error_logs('COSMOS_checkAddressInDB', err.message)
 
         }
     };
 
 }
-export const cosmosTxStatusDepositWithdraw = new queue_transactions()
+export const processedQueueTransactions = new ProcessedBlockTransactions()

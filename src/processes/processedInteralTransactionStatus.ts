@@ -1,16 +1,16 @@
 import { config } from "../config/config";
 import { BlockChainStatusEnum, BooleanEnum, NotificationTypeEnum, TokenStandard, TrnxTypeEnum } from "../enum";
 import { NotificationInterface, TrnxHistoryModel } from "../models";
-import { Utility_Helper, Wallet_Helper } from "../helpers";
+import { utilityHelper, walletHelper } from "../helpers";
 import cosmosProcessHelper from "./process.helper";
 import { Op } from "sequelize";
-import kafkaHelper from "../config/kafka.helper";
+import kafkaHelper from "../config/kafka";
 import { pending_trnx } from "../interfaces/global_helper";
 import fetch from 'node-fetch';
 
-class CosmosTxStatusUpdateProcess {
+class UpdateInteralTransactionStatus {
 
-  public startTxStatusUpdateQueue = async () => {
+  public consumeTxStatusUpdateQueue = async () => {
     let consumer: any = null;
     let isConnected = false;
 
@@ -184,7 +184,7 @@ class CosmosTxStatusUpdateProcess {
       if (!txData.coin?.is_token) {
         console.log('in case of coin');
         coin_data = await cosmosProcessHelper.checkIfContract('NativeCoin');
-      } 
+      }
       if (coin_data) {
         const trx_data = {
           coin_id: txData.coin?.coin_id,
@@ -243,90 +243,90 @@ class CosmosTxStatusUpdateProcess {
           if (results) {
             const [addressWithdraw, addressDeposit]: any = results as string[];
 
-          if (addressWithdraw) {
-            /** update withdraw user eth balance */
-            if (tx_type !== TrnxTypeEnum.DAPP) {
-              const native_coin: any = await cosmosProcessHelper.checkIfContract('NativeCoin');
-              await Wallet_Helper.Update_Balance(from_address, native_coin);
-              if (trx_data?.coin?.is_token === BooleanEnum.true && trx_data.coin?.token_type.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
-                /** Update User ERC20 Token Balance */
-                await Wallet_Helper.Update_Balance(from_address, trx_data?.coin);
-              }
-            }
-
-            let trnxTypeW: string = "Withdraw";
-            switch (tx_type) {
-              case TrnxTypeEnum.DAPP:
-                trnxTypeW = "Smart Contract Execution";
-                break;
-              case TrnxTypeEnum.APPROVE:
-                trnxTypeW = "Approval";
-                break;
-              case TrnxTypeEnum.SWAP:
-                trnxTypeW = "Swap";
-                break;
-              case TrnxTypeEnum.CROSS_CHAIN:
-                trnxTypeW = "Cross chain Swap";
-                break;
-              default:
-                break;
-            }
-            const notiMsg = trx_data.coin?.token_type == TokenStandard.ERC721 ?
-              `${trnxTypeW} request of NFT(${coin_symbol.toUpperCase()} ) with token id ${amount} has been confirmed.` : `${trnxTypeW} request of ${await Utility_Helper.bigNumberSafeConversion(amount)} ${coin_symbol.toUpperCase()} has been confirmed.`;
-
-            const notifData: NotificationInterface = {
-              title: trnxTypeW.toUpperCase(),
-              message: notiMsg,
-              amount: amount,
-              from_user_id: 0,
-              to_user_id: user_id,
-              coin_symbol: coin_symbol,
-              wallet_address: from_address,
-              tx_id: tx_row_id,
-              coin_id: trx_data?.coin?.coin_id,
-              coin_family: trx_data?.coin.coin_family,
-              tx_type: tx_type,
-              notification_type: trnxTypeW,
-              state: "confirmed"
-            };
-            Utility_Helper.SendNotification(notifData);
-          }
-          if (addressDeposit) {
-            const to_user_id: number = addressDeposit ? JSON.parse(addressDeposit)?.user_id : 0;
-            /** update to adrs wallet balance */
-            if (to_address !== from_address) {
+            if (addressWithdraw) {
+              /** update withdraw user eth balance */
               if (tx_type !== TrnxTypeEnum.DAPP) {
-                if (trx_data.coin?.token_type === null || trx_data.coin?.token_type?.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
-                  let balance: any = await Wallet_Helper.Update_Balance(
-                    to_address, /// wallet_address,
-                    trx_data?.coin /// coin
-                  );
+                const native_coin: any = await cosmosProcessHelper.checkIfContract('NativeCoin');
+                await walletHelper.updateBalance(from_address, native_coin);
+                if (trx_data?.coin?.is_token === BooleanEnum.true && trx_data.coin?.token_type.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
+                  /** Update User ERC20 Token Balance */
+                  await walletHelper.updateBalance(from_address, trx_data?.coin);
                 }
               }
+
+              let trnxTypeW: string = "Withdraw";
+              switch (tx_type) {
+                case TrnxTypeEnum.DAPP:
+                  trnxTypeW = "Smart Contract Execution";
+                  break;
+                case TrnxTypeEnum.APPROVE:
+                  trnxTypeW = "Approval";
+                  break;
+                case TrnxTypeEnum.SWAP:
+                  trnxTypeW = "Swap";
+                  break;
+                case TrnxTypeEnum.CROSS_CHAIN:
+                  trnxTypeW = "Cross chain Swap";
+                  break;
+                default:
+                  break;
+              }
+              const notiMsg = trx_data.coin?.token_type == TokenStandard.ERC721 ?
+                `${trnxTypeW} request of NFT(${coin_symbol.toUpperCase()} ) with token id ${amount} has been confirmed.` : `${trnxTypeW} request of ${await utilityHelper.bigNumberSafeConversion(amount)} ${coin_symbol.toUpperCase()} has been confirmed.`;
+
+              const notifData: NotificationInterface = {
+                title: trnxTypeW.toUpperCase(),
+                message: notiMsg,
+                amount: amount,
+                from_user_id: 0,
+                to_user_id: user_id,
+                coin_symbol: coin_symbol,
+                wallet_address: from_address,
+                tx_id: tx_row_id,
+                coin_id: trx_data?.coin?.coin_id,
+                coin_family: trx_data?.coin.coin_family,
+                tx_type: tx_type,
+                notification_type: trnxTypeW,
+                state: "confirmed"
+              };
+              utilityHelper.SendNotification(notifData);
             }
-            const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
-              `Deposit of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been confirmed.` : `Deposit of ${await Utility_Helper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been confirmed.`;
+            if (addressDeposit) {
+              const to_user_id: number = addressDeposit ? JSON.parse(addressDeposit)?.user_id : 0;
+              /** update to adrs wallet balance */
+              if (to_address !== from_address) {
+                if (tx_type !== TrnxTypeEnum.DAPP) {
+                  if (trx_data.coin?.token_type === null || trx_data.coin?.token_type?.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
+                    let balance: any = await walletHelper.updateBalance(
+                      to_address, /// wallet_address,
+                      trx_data?.coin /// coin
+                    );
+                  }
+                }
+              }
+              const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
+                `Deposit of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been confirmed.` : `Deposit of ${await utilityHelper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been confirmed.`;
 
-            const notifData: NotificationInterface = {
-              title: NotificationTypeEnum.DEPOSIT.toUpperCase(),
-              message: notiMsg,
-              amount: amount,
-              from_user_id: user_id,
-              to_user_id: to_user_id,
-              wallet_address: to_address,
-              tx_id: tx_row_id,
-              coin_symbol: coin_symbol,
-              coin_id: trx_data?.coin?.coin_id,
-              coin_family: trx_data?.coin?.coin_family,
-              tx_type: NotificationTypeEnum.DEPOSIT,
-              notification_type: 'Deposit',
-              state: "confirmed"
-            };
-            Utility_Helper.SendNotification(notifData);
+              const notifData: NotificationInterface = {
+                title: NotificationTypeEnum.DEPOSIT.toUpperCase(),
+                message: notiMsg,
+                amount: amount,
+                from_user_id: user_id,
+                to_user_id: to_user_id,
+                wallet_address: to_address,
+                tx_id: tx_row_id,
+                coin_symbol: coin_symbol,
+                coin_id: trx_data?.coin?.coin_id,
+                coin_family: trx_data?.coin?.coin_family,
+                tx_type: NotificationTypeEnum.DEPOSIT,
+                notification_type: 'Deposit',
+                state: "confirmed"
+              };
+              utilityHelper.SendNotification(notifData);
+            }
+
+            return true;
           }
-
-          return true;
-        }
 
         } else if (status_tx == BlockChainStatusEnum.FAILED) {
           let trnxTypeW: string = "Withdraw";
@@ -348,7 +348,7 @@ class CosmosTxStatusUpdateProcess {
           }
 
           const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
-            `${trnxTypeW} of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been failed.` : `${trnxTypeW} of ${await Utility_Helper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been failed.`;
+            `${trnxTypeW} of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been failed.` : `${trnxTypeW} of ${await utilityHelper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been failed.`;
 
           const notifData: NotificationInterface = {
             title: trnxTypeW.toUpperCase(),
@@ -365,7 +365,7 @@ class CosmosTxStatusUpdateProcess {
             notification_type: trnxTypeW,
             state: "failed"
           };
-          Utility_Helper.SendNotification(notifData);
+          utilityHelper.SendNotification(notifData);
 
           return true;
         } else {
@@ -381,4 +381,4 @@ class CosmosTxStatusUpdateProcess {
     }
   }
 }
-export const cosmosTxStatusUpdateProcess = new CosmosTxStatusUpdateProcess();
+export const updateInteralTransactionStatus = new UpdateInteralTransactionStatus();

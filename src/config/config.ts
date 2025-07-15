@@ -1,4 +1,4 @@
-import zookeeperConfig from "../helpers/zookeeper.helper";
+import zookeeperConfig from "./zookeeper";
 const name = 'qubetics';
 export const config = {
   DB_USER: zookeeperConfig.config.DB_USER,
@@ -51,9 +51,9 @@ export const config = {
     MAILGUN_BASE_URL: zookeeperConfig.config.MAILGUN_BASE_URL,
     FROM_GMAIL: zookeeperConfig.config.FROM_GMAIL
   },
-  NODE: { 
-  // COSMOS_RPC_URL: zookeeperConfig.config.TICS_NATIVE_RPC_URL 
-  // COSMOS_SWAGGER_URL: zookeeperConfig.config.TICS_NATIVE_SWAGGER_URL
+  NODE: {
+    // COSMOS_RPC_URL: zookeeperConfig.config.TICS_NATIVE_RPC_URL 
+    // COSMOS_SWAGGER_URL: zookeeperConfig.config.TICS_NATIVE_SWAGGER_URL
   },
   NODE_ISSUE_ALERT_EMAIL: zookeeperConfig.config.NODE_ISSUE_ALERT_EMAIL,
   READ_BEHINED_BLOCK_COSMOS: `${name}_${zookeeperConfig.config.SERVER}_${zookeeperConfig.config.READ_BEHINED_BLOCK_COSMOS}`,

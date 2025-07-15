@@ -1,4 +1,4 @@
-import ZooKeeper from './helpers/zookeeper.helper';
+import ZooKeeper from './config/zookeeper';
 
 
 (async () => {

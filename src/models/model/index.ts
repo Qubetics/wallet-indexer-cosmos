@@ -2,13 +2,12 @@ import CoinsModel from './model.coins';
 import DeviceTokenModel from './model.deviceToken';
 import NotificationModel from './model.notifications';
 import TrnxHistoryModel from './model.trnxHistory';
-import EthOldBLockModel from './model.eth_old_block';
-import SettingsModel from './model.settings';
-import CatchErrorMsgsModel from './model_catch_error_logs';
-import RewardHistoryModel from './model.reward_history';
-import ReferralModel from './model.referral';
+// import SettingsModel from './model.settings';
+import CatchErrorMsgsModel from './model.catchErrorLogs';
+// import RewardHistoryModel from './model.reward_history';
+// import ReferralModel from './model.referral';
 import WalletModel from './model.wallets';
-import CoinPriceInFiatModel from './model.coin_price_fiat';
+// import CoinPriceInFiatModel from './model.coin_price_fiat';
 import CustomTokennModel from './model.custom_tokens';
 import TicsNativeAddressModel from './model.ticsNativeAddress';
 import TicsNativeOldBlockModel from './model.ticsNativeOldBlock';
@@ -18,13 +17,12 @@ export {
     DeviceTokenModel,
     NotificationModel,
     TrnxHistoryModel,
-    EthOldBLockModel,
-    SettingsModel,
+    // SettingsModel,
     CatchErrorMsgsModel,
-    RewardHistoryModel,
-    ReferralModel,
+    // RewardHistoryModel,
+    // ReferralModel,
     WalletModel,
-    CoinPriceInFiatModel,
+    // CoinPriceInFiatModel,
     CustomTokennModel,
     TicsNativeAddressModel,
     TicsNativeOldBlockModel

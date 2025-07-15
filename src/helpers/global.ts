@@ -4,8 +4,8 @@ import { CatchErrorMsgsModel, CoinInterface } from "../models";
 import { WalletModel, CustomTokennModel, TicsNativeAddressModel } from "../models/model/index"
 import cosmosProcessHelper from "../processes/process.helper";
 
-class Global_helper {
-    public async check_coin_in_wallet(wallet_address: string, coin: CoinInterface, balance: any) {
+class GlobalHelper {
+    public async checkCoinInWallet(wallet_address: string, coin: CoinInterface, balance: any) {
         try {
             let wallet_data: any = await TicsNativeAddressModel.findOne({
                 where: {
@@ -19,7 +19,7 @@ class Global_helper {
                 raw: true
             })
             if (!wallet_data) {
-                wallet_data = await cosmosProcessHelper.check_our_wallet_address(wallet_address)
+                wallet_data = await cosmosProcessHelper.checkOurWalletAddress(wallet_address)
                 if (!wallet_data) {
                     return;
                 }
@@ -31,38 +31,38 @@ class Global_helper {
                 await TicsNativeAddressModel.create(data_obj)
             }
 
-            console.log("wallet created>>")
-            if (coin.added_by) {
-                console.log("coin.added_by exist", coin.added_by)
-                if (coin.added_by == 'user') {
-                    console.log("added by user")
-                    let user_exist: any = await CustomTokennModel.findOne({
-                        attributes: ["id"],
-                        where: { user_id: wallet_data.user_id, coin_id: coin.coin_id },
-                        raw: true
-                    })
-                    if (user_exist) {
-                        console.log("custom token already exist")
-                    } else {
-                        console.log("custom token not exist")
-                        let currentUTCDate: string = new Date()
-                            .toISOString()
-                            .replace(/T/, " ")
-                            .replace(/\..+/, "");
-                        await CustomTokennModel.create({
-                            coin_id: coin.coin_id,
-                            user_id: wallet_data.user_id,
-                            created_at: currentUTCDate,
-                            updated_at: currentUTCDate
-                        })
-                    }
+            // console.log("wallet created>>")
+            // if (coin.added_by) {
+            //     console.log("coin.added_by exist", coin.added_by)
+            //     if (coin.added_by == 'user') {
+            //         console.log("added by user")
+            //         let user_exist: any = await CustomTokennModel.findOne({
+            //             attributes: ["id"],
+            //             where: { user_id: wallet_data.user_id, coin_id: coin.coin_id },
+            //             raw: true
+            //         })
+            //         if (user_exist) {
+            //             console.log("custom token already exist")
+            //         } else {
+            //             console.log("custom token not exist")
+            //             let currentUTCDate: string = new Date()
+            //                 .toISOString()
+            //                 .replace(/T/, " ")
+            //                 .replace(/\..+/, "");
+            //             await CustomTokennModel.create({
+            //                 coin_id: coin.coin_id,
+            //                 user_id: wallet_data.user_id,
+            //                 created_at: currentUTCDate,
+            //                 updated_at: currentUTCDate
+            //             })
+            //         }
 
-                }
-            } else {
-                console.log("coin.added_by does not exist")
-            }
+            //     }
+            // } else {
+            //     console.log("coin.added_by does not exist")
+            // }
         } catch (err: any) {
-            console.error("Error in check_coin_in_wallet>>>", err)
+            console.error("Error in checkCoinInWallet>>>", err)
             return err;
         }
 
@@ -113,4 +113,4 @@ class Global_helper {
         }
     }
 }
-export let global_helper = new Global_helper();
+export let globalHelper = new GlobalHelper();

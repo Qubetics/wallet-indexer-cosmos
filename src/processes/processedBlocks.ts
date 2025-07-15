@@ -2,10 +2,10 @@ import { config } from "../config/config";
 import cosmosProcessHelper from "./process.helper";
 import { KEYS } from "../enum";
 import { TicsNativeOldBlockModel } from "../models";
-import { global_helper } from "../helpers/global_helper";
-import kafkaHelper from "../config/kafka.helper";
+import { globalHelper } from "../helpers/global";
+import kafkaHelper from "../config/kafka";
 import fetch from 'node-fetch';
-class CosmosBlockProcess {
+class ProcessedBlocks {
     public minBlockConfirmation: number;
     public swap: string | null;
     public approval: string | null;
@@ -36,7 +36,7 @@ class CosmosBlockProcess {
                 } else {
                     let block_diff: number = newBlock - oldBlock;
                     if (block_diff > 50) {
-                        await cosmosProcessHelper.diff_blocks_add_in_db(newBlock, oldBlock)
+                        await cosmosProcessHelper.diffBlocksAddInDb(newBlock, oldBlock)
                         await cosmosProcessHelper.setKeyValuePair(config.REDISKEYS.COSMOS_BLOCKS, config.REDISKEYS.OLD_BLOCK_COSMOS, newBlock.toString())
                         await cosmosProcessHelper.setBlocks(config.REDISKEYS.COSMOS_BLOCKS, config.REDISKEYS.NEW_BLOCK_COSMOS, this.minBlockConfirmation, newBlock)
                     } else {
@@ -45,11 +45,11 @@ class CosmosBlockProcess {
                 }
             } else {
                 console.log(" no old block and no new block")
-                await global_helper.save_error_logs('cosmos_setBlocks', 'No old block no new block')
+                await globalHelper.save_error_logs('cosmos_setBlocks', 'No old block no new block')
             }
         } catch (err: any) {
             console.error("Error in getBlocks", err)
-            await global_helper.save_error_logs('cosmos_getBlocks', err.message)
+            await globalHelper.save_error_logs('cosmos_getBlocks', err.message)
         }
     }
     public async readBlocks(blockNumber: number, toBlockNumber: number) {
@@ -64,7 +64,7 @@ class CosmosBlockProcess {
             await this.getTxFromBlock(blockNumber, KEYS.latestBlock);
         } catch (err: any) {
             console.error("Error in readBlocks>>.", (err as Error).message)
-            await global_helper.save_error_logs('cosmos_readBlocks', err.message)
+            await globalHelper.save_error_logs('cosmos_readBlocks', err.message)
         }
     }
     public async getTxFromBlock(blockId: number, key: string) {
@@ -133,7 +133,7 @@ class CosmosBlockProcess {
             await Promise.allSettled(transactionPromises);
         } catch (err: any) {
             console.error("Error in getTxFromBlock:", (err as Error).message);
-            await global_helper.save_error_logs('cosmos_readBehindBlock', err.message)
+            await globalHelper.save_error_logs('cosmos_readBehindBlock', err.message)
         }
     }
     public async readBehindBlock() {
@@ -171,7 +171,7 @@ class CosmosBlockProcess {
             }
         } catch (err: any) {
             console.error("Error in readBehindBlock>>", err)
-            await global_helper.save_error_logs('cosmos_readBehindBlock', err.message)
+            await globalHelper.save_error_logs('cosmos_readBehindBlock', err.message)
         }
     }
     public async readSpecificBlock() {
@@ -193,4 +193,4 @@ class CosmosBlockProcess {
     }
 }
 
-export const cosmosBlocksProcess = new CosmosBlockProcess();
+export const processedBlocks = new ProcessedBlocks();

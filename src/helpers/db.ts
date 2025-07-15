@@ -1,22 +1,22 @@
 import {
     BooleanEnum,
-    CoinFamilyEnum,
-    TokenStandard,
+    // CoinFamilyEnum,
+    // TokenStandard,
 } from "../enum";
 
 import {
-    CoinInterface,
-    CoinsModel,
+    // CoinInterface,
+    // CoinsModel,
     DeviceTokenModel,
-    SettingsModel,
-    RewardHistoryModel,
-    WalletModel,
-    ReferralModel,
-    CatchErrorMsgsModel,
-    CoinPriceInFiatModel,
+    // SettingsModel,
+    // RewardHistoryModel,
+    // WalletModel,
+    // ReferralModel,
+    // CatchErrorMsgsModel,
+    // CoinPriceInFiatModel,
 
 } from "../models/index";
-import { Utility_Helper } from "../helpers";
+// import { utilityHelper } from "../helpers";
 import { Op } from "sequelize";
 
 class DbHelper {
@@ -43,5 +43,5 @@ class DbHelper {
         }
     };
 }
-export let Db_Helper = new DbHelper();
+export let dbHelper = new DbHelper();
 
