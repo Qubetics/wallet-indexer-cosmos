@@ -1,33 +1,34 @@
 import axios from "axios";
 import { config } from "../config/config";
 import { CatchErrorMsgsModel, CoinInterface } from "../models";
-import { WalletModel, CustomTokennModel } from "../models/model/index"
+import { WalletModel, CustomTokennModel, TicsNativeAddressModel } from "../models/model/index"
 import cosmosProcessHelper from "../processes/process.helper";
 
 class Global_helper {
     public async check_coin_in_wallet(wallet_address: string, coin: CoinInterface, balance: any) {
         try {
-            let wallet_data: any = await WalletModel.findOne({
-                attributes: ["balance", "user_id", "wallet_name"],
+            let wallet_data: any = await TicsNativeAddressModel.findOne({
                 where: {
-                    wallet_address: wallet_address,
-                    coin_id: coin.coin_id,
+                    address: wallet_address,
                 },
+                attributes: ["wallet_id"],
+                include: [{
+                    model: WalletModel,
+                    attributes: ["balance", "user_id", "wallet_name"],
+                }],
                 raw: true
             })
             if (!wallet_data) {
                 wallet_data = await cosmosProcessHelper.check_our_wallet_address(wallet_address)
+                if (!wallet_data) {
+                    return;
+                }
                 let data_obj: any = {
                     user_id: wallet_data.user_id,
-                    wallet_name: wallet_data.wallet_name,
-                    wallet_address: wallet_address,
-                    coin_id: coin.coin_id,
-                    coin_family: coin.coin_family,
-                    balance: balance !== null ? balance : 0,
-                    default_wallet: 1,
-                    status: 1
+                    address: wallet_address,
+                    wallet_id: wallet_data.wallet_id,
                 }
-                await WalletModel.create(data_obj)
+                await TicsNativeAddressModel.create(data_obj)
             }
 
             console.log("wallet created>>")
