@@ -57,5 +57,5 @@ export const config = {
   },
   NODE_ISSUE_ALERT_EMAIL: zookeeperConfig.config.NODE_ISSUE_ALERT_EMAIL,
   READ_BEHINED_BLOCK_COSMOS: `${name}_${zookeeperConfig.config.SERVER}_${zookeeperConfig.config.READ_BEHINED_BLOCK_COSMOS}`,
-  BLOCKS: zookeeperConfig.config.BLOCKS,
+  BLOCKS: zookeeperConfig.config.READ_BEHINED_BLOCK_TICS_NATIVE,
 }
