@@ -45,7 +45,7 @@ class CosmosStartProcess {
     }, 10000);
   }
   public addInternalTransactionsInQueue() {
-    setTimeout(async () => {
+    schedule.scheduleJob("*/10 * * * * *", async function () {
       await processedInternalTransactions.getInternalPendingTransactions();
     });
   }
