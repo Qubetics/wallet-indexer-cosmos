@@ -304,7 +304,7 @@ class UpdateInteralTransactionStatus {
               if (to_address !== from_address) {
                 if (tx_type !== TrnxTypeEnum.DAPP) {
                   if (trx_data.coin?.token_type === null || trx_data.coin?.token_type?.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
-                    let balance: any = await walletHelper.updateBalance(
+                    await walletHelper.updateBalance(
                       to_address, /// wallet_address,
                       trx_data?.coin /// coin
                     );
@@ -353,6 +353,10 @@ class UpdateInteralTransactionStatus {
             default:
               break;
           }
+
+
+          const native_coin: any = await cosmosProcessHelper.checkIfContract('NativeCoin');
+          await walletHelper.updateBalance(from_address, native_coin);
 
           const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
             `${trnxTypeW} of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been failed.` : `${trnxTypeW} of ${await utilityHelper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been failed.`;
