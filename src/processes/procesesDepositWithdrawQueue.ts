@@ -278,7 +278,7 @@ class ProcesesDepositWithdrawQueue {
               trnxTypeW = "Swap";
               break;
             case TrnxTypeEnum.CROSS_CHAIN:
-              trnxTypeW = "Cross-chain Swap";
+              trnxTypeW = "Cross Chain Swap";
               break;
             default:
               break;
@@ -298,7 +298,7 @@ class ProcesesDepositWithdrawQueue {
             );
           }
 
-          let notiMsg = coin?.token_type == TokenStandard.ERC721 ? `${trnxTypeW} request of NFT(${coin.coin_symbol.toUpperCase()}) with token id ${amount} has been confirmed.` : `${trnxTypeW} request of ${await utilityHelper.bigNumberSafeConversion(amount)} ${coin.coin_symbol?.toUpperCase()} has been confirmed.`;
+          let notiMsg = coin?.token_type == TokenStandard.ERC721 ? `${trnxTypeW} of NFT(${coin.coin_symbol.toUpperCase()}) with token id ${amount} has been confirmed.` : `${trnxTypeW} of ${await utilityHelper.bigNumberSafeConversion(amount)} ${coin.coin_symbol?.toUpperCase()} has been confirmed.`;
 
           let notifData: NotificationInterface = {
             title: trnxTypeW?.toUpperCase(),
