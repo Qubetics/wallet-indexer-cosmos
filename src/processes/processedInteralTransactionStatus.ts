@@ -312,7 +312,7 @@ class UpdateInteralTransactionStatus {
                 }
               }
               const notiMsg = trx_data?.coin?.token_type == TokenStandard.ERC721 ?
-                `Deposit of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been confirmed.` : `Deposit of ${await utilityHelper.bigNumberSafeConversion(amount)} ${trx_data?.coin.coin_symbol} has been confirmed.`;
+                `Deposit of NFT(${trx_data?.coin.coin_symbol}) with token id ${amount} has been confirmed.` : `Deposit of ${await utilityHelper.bigNumberSafeConversion(amount)} ${trx_data?.coin?.coin_symbol.toUpperCase()} has been confirmed.`;
 
               const notifData: NotificationInterface = {
                 title: NotificationTypeEnum.DEPOSIT.toUpperCase(),
