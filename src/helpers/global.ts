@@ -14,6 +14,7 @@ class GlobalHelper {
                 attributes: ["wallet_id"],
                 include: [{
                     model: WalletModel,
+                    as: 'wallet',
                     attributes: ["balance", "user_id", "wallet_name"],
                 }],
                 raw: true
