@@ -19,7 +19,7 @@ class CosmosStartProcess {
   }
 
   public readBlocks() {
-    schedule.scheduleJob("*/8 * * * * *", async function () {
+    schedule.scheduleJob("*/4 * * * * *", async function () {
       await processedBlocks.getBlocks();
       await processedBlocks.readBehindBlock()
     });
