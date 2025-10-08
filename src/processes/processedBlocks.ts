@@ -102,10 +102,10 @@ class ProcessedBlocks {
 
             const transactionPromises = txs.map(async (tx: any) => {
                 // Defensive: Cosmos txs may have different structure, but we expect Ethermint EVM txs
-                let txHash = '';
-                let fromAddress = '';
-                let toAddress = '';
-                let value = '0';
+                // let txHash = '';
+                // let fromAddress = '';
+                // let toAddress = '';
+                // let value = '0';
 
                 try {
                     const msg = tx?.body?.messages?.[0];

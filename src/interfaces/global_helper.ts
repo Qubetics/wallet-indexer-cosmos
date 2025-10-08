@@ -16,3 +16,12 @@ export interface pending_trnx {
     token_type: string | null,
     token_address: string
 }
+
+export interface TxReceipt {
+    txHash: string;
+    blockNumber: number;
+    from: string;
+    to: string;
+    value: string;
+    trnxFee: number | string;
+}

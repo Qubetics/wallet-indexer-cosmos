@@ -1,9 +1,9 @@
-import { CoinInterface, TicsNativeOldBlockModel, WalletInterface } from "../models";
+import { CoinInterface, TicsNativeAddressModel, TicsNativeOldBlockModel, WalletInterface, WalletModel } from "../models";
 import redisClient from "../config/redis";
 import { promisify } from "util";
 import { config } from "../config/config";
 import { globalHelper } from "../helpers/global";
-import fetch from 'node-fetch';
+// import fetch from 'node-fetch';
 import { blockchainHelper } from "../helpers";
 
 class CosmosProcessHelper {
@@ -22,7 +22,51 @@ class CosmosProcessHelper {
   }
 
   constructor() {
+    this.fetchWalletAddress();
   }
+
+
+  public fetchWalletAddress = async () => {
+    try {
+      // console.log('teddddddddddddddddddddddd >>>>>>>>>>>>>..');
+      const addressData: any = await TicsNativeAddressModel.findAll({
+        attributes: ["wallet_id", "user_id", "address"],
+        include: [{
+          model: WalletModel,
+          as: 'wallet',
+          attributes: ["wallet_name"],
+          where: { status: 1, coin_family: config.STATIC_COIN_FAMILY.TICS }
+        }],
+        raw: true,
+        // logging: true
+      });
+
+      for await (const walletAddress of addressData) {
+
+        const findWalletData = await this.getKeyValuePair(
+          `${config.COSMOS_WALLET_ADDRESS}`,
+          walletAddress.address.toUpperCase()
+        );
+
+        if (!findWalletData) {
+          const walletRedisData = {
+            address: walletAddress.address,
+            user_id: walletAddress.user_id,
+            wallet_name: walletAddress["wallet.wallet_name"],
+            wallet_id: walletAddress.wallet_id
+          }
+          // console.log('walletRedisData >>>', walletRedisData);
+          this.setKeyValuePair(
+            `${config.COSMOS_WALLET_ADDRESS}`,
+            walletAddress.address.toUpperCase(),
+            JSON.stringify(walletRedisData)
+          );
+        }
+      }
+    } catch (err: any) {
+      console.error('fetchWalletAddress >>>>>', err);
+    }
+  };
   public async getKeyValuePair(keyName: string, field: string) {
     try {
       const getAsync = promisify(redisClient.HGET).bind(redisClient);
