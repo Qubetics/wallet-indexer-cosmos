@@ -11,6 +11,7 @@ import WalletModel from './model.wallets';
 import CustomTokennModel from './model.custom_tokens';
 import TicsNativeAddressModel from './model.ticsNativeAddress';
 import TicsNativeOldBlockModel from './model.ticsNativeOldBlock';
+import DvpnSessionsModel from './model.dvpn_sessions';
 
 export {
     CoinsModel,
@@ -25,5 +26,6 @@ export {
     // CoinPriceInFiatModel,
     CustomTokennModel,
     TicsNativeAddressModel,
-    TicsNativeOldBlockModel
+    TicsNativeOldBlockModel,
+    DvpnSessionsModel
 }

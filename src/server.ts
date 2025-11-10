@@ -1,5 +1,5 @@
 import kafkaHelper from "./config/kafka";
-import { procesesDepositWithdrawQueue, processedInternalTransactions, updateInteralTransactionStatus, processedBlocks, processedQueueTransactions, processedAddressBalance } from "./processes/index.process"
+import { procesesDepositWithdrawQueue, processedInternalTransactions, updateInteralTransactionStatus, processedBlocks, processedQueueTransactions, processedAddressBalance, processedDvpnSession } from "./processes/index.process"
 import schedule from "node-schedule";
 class CosmosStartProcess {
   constructor() {
@@ -12,6 +12,8 @@ class CosmosStartProcess {
     this.addInternalTransactionsInQueue();
     this.updateInternalTransactionsStatus();
     this.cosmosUpdateBalance();
+
+    this.consumeDvpnSessions()
   }
 
   public async connectKafka() {
@@ -25,7 +27,7 @@ class CosmosStartProcess {
     });
   }
   public readSpecificBlock() {
-    schedule.scheduleJob('*/1 * * * *', async function () {
+    schedule.scheduleJob('*/30 * * * * *', async function () {
       await processedBlocks.readSpecificBlock();
     })
   }
@@ -57,6 +59,12 @@ class CosmosStartProcess {
   public async cosmosUpdateBalance() {
     setTimeout(async () => {
       await processedAddressBalance.default.consumeWalletBalanceUpdateQueue();
+    }, 10000);
+  }
+
+  public async consumeDvpnSessions() {
+    setTimeout(async () => {
+      await processedDvpnSession.consumeDvpnSessionsQueue();
     }, 10000);
   }
 }

@@ -91,7 +91,6 @@ class ProcessedBlocks {
             }
 
             const blockInfo = await response.json();
-            // console.log("blockInfo >>>", blockInfo);
 
             const blockTxs = Array.isArray(blockInfo?.block?.data?.txs)
                 ? blockInfo.block.data.txs
@@ -101,12 +100,20 @@ class ProcessedBlocks {
                 console.log("No transactions found in block");
                 return;
             }
+            
 
+            //will revert this  
             const txs = Array.isArray(blockInfo?.txs) ? blockInfo.txs : [];
-            const targetTopic =
-                key === KEYS.latestBlock
-                    ? this.cosmos_block_tx_topic
-                    : this.cosmos_behind_block_tx_topic;
+
+
+           
+            // const targetTopic =
+            //     key === KEYS.latestBlock
+            //         ? this.cosmos_block_tx_topic
+            //         : this.cosmos_behind_block_tx_topic;
+
+            const targetTopic =  this.cosmos_block_tx_topic
+
 
             for (let i = 0; i < txs.length; i++) {
                 const tx = txs[i];

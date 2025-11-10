@@ -10,13 +10,14 @@ import { globalHelper } from "../helpers/global";
 // import fetch from 'node-fetch';
 import { sha256 } from "@cosmjs/crypto"
 import { toHex } from "@cosmjs/encoding"
+import { DvpnSessionsInterface } from "../interfaces/global_helper";
 class ProcessedBlockTransactions {
     public cosmos_block_tx_topic = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_TOPIC;
     public cosmos_block_tx_group_id = config.KAFKA_BLOCKS.COSMOS_BLOCK_TX_GROUP_ID;
     public cosmos_behind_block_tx_topic = config.KAFKA_BLOCKS.COSMOS_BEHIND_BLOCK_TX_TOPIC;
     public cosmos_behind_block_tx_group_id = config.KAFKA_BLOCKS.COSMOS_BEHIND_BLOCK_TX_GROUP_ID;
     public deposit_withdraw_topic = config.KAFKA_TRANSACTIONS.DEPOSIT_WITHDRAW_TOPIC;
-
+    public dvpn_session_topic = config.KAFKA_TRANSACTIONS.DVPN_SESSION_TOPIC;
     constructor() { }
 
     public startBlockTxQueue = async () => {
@@ -221,6 +222,7 @@ class ProcessedBlockTransactions {
                     }
                 }
                 for (const log of JSON.parse(txResult?.log)) {
+                    console.log("log these events  in this block>>>", log.events);
                     for (const event of log.events || []) {
                         // Normal Transfers
                         if (event.type === "transfer") {
@@ -321,35 +323,67 @@ class ProcessedBlockTransactions {
                             // actions.push({ type: "unstake", from: delegator, to: validator, amount: amt });
                         }
 
-                        // Rewards
-                        // if (event.type === "withdraw_rewards") {
-                        //     let delegator, validator, amt;
-                        //     for (const attr of event.attributes) {
-                        //         if (attr.key === "delegator") delegator = attr.value;
-                        //         if (attr.key === "validator") validator = attr.value;
-                        //         if (attr.key === "amount") amt = attr.value.replace("tics", "");
-                        //     }
-                        //     let finalAmount = "0";
-                        //     if (amt) {
-                        //         finalAmount = (Number(amt) / 1e18).toString();
-                        //     }
-                        //     const txReceipt: any = {
-                        //         status: 1,
-                        //         txHash: txHash,
-                        //         blockNumber: data.block_number,
-                        //         logs: [], // Not EVM logs, but we can pass empty or custom if needed
-                        //         gasUsed: txResult?.gas_used || 0,
-                        //         gasPrice: txResult?.gas_price || 1, // Not available in Cosmos, set to 0 or estimate if needed
-                        //         from: validator,
-                        //         to: delegator,
-                        //         value: finalAmount,
-                        //         trnxFee: trnxFee
-                        //     };
-                        //     console.log('withdraw_rewards txReceipt >>>', txReceipt);
+                        // DVPN Session Update Status
+                        if(event?.type == "qubetics.session.v3.EventUpdateStatus") {
+                            
+                            let acc_address = "", id = "", node_address = "", status = "", status_at = "";
+                            for (const attr of event.attributes) {
+                                if (attr.key === "acc_address") acc_address = attr.value || "";
+                                if (attr.key === "id") id = attr.value || "";
+                                if (attr.key === "node_address") node_address = attr.value || "";
+                                if (attr.key === "status") status = attr.value || "";
+                                if (attr.key === "status_at") status_at = attr.value || "";
+                                
+                            }
 
-                        //     // actions.push({ type: "reward", from: validator, to: delegator, amount: amt });
-                        //     await processedQueueTransactions.checkCosmosDeposit(txReceipt);
-                        // }
+                            const sessionDetails: DvpnSessionsInterface = {
+                                wallet_address: acc_address?.toLowerCase() || "",
+                                node_id: id?.toString() || "",
+                                node_address: node_address?.toLowerCase() || "",
+                                status: status || "",
+                                status_at: status_at || "",
+                                block: Number(data.block_number) || 0,
+                                event: event.type || "",
+                                tx_hash: txHash || ""
+                            };
+
+                            console.log('DVPN Event Update Status sessionDetails 🚅🚅>>>', sessionDetails);
+
+                            await processedQueueTransactions.checkOurDvpnSession(sessionDetails);
+
+
+                        }
+
+                        if(event?.type == "qubetics.subscription.v3.EventCreateSession") {
+                            
+                            let acc_address = "", id = "", node_address = "", status = "", status_at = "", subscription_id = "";
+                            for (const attr of event.attributes) {
+                                if (attr.key === "acc_address") acc_address = attr.value || "";
+                                if (attr.key === "id") id = attr.value || "";
+                                if (attr.key === "node_address") node_address = attr.value || "";
+                                if (attr.key === "status") status = attr.value || "";
+                                if (attr.key === "status_at") status_at = attr.value || "";
+                                if (attr.key === "subscription_id") subscription_id = attr.value || "";
+                            }
+
+                            const sessionDetails: DvpnSessionsInterface = {
+                                wallet_address: acc_address?.toLowerCase() || "",
+                                node_id: id?.toString() || "",
+                                node_address: node_address?.toLowerCase() || "",
+                                status: status || "",
+                                status_at: status_at || "",
+                                block: Number(data.block_number) || 0,
+                                event: event.type || "",
+                                tx_hash: txHash || ""
+                            };
+
+                            console.log('DVPN Event Create Session 🚅🚅>>>', sessionDetails);
+
+                            await processedQueueTransactions.checkOurDvpnSession(sessionDetails);
+
+                        }
+
+                     
                     }
                 }
 
@@ -632,6 +666,43 @@ class ProcessedBlockTransactions {
 
         }
     };
+
+
+
+    private async checkOurDvpnSession(sessionDetails: DvpnSessionsInterface) {
+        try {
+          let { wallet_address } = sessionDetails;
+          if (!wallet_address) return;
+          
+          wallet_address = wallet_address.toUpperCase();
+          wallet_address = wallet_address.replace(/^"|"$/g, '');
+
+          // Check if the wallet address present in REDIS
+          const walletData = await cosmosProcessHelper.checkOurWalletAddress(wallet_address);
+
+          console.log("Qubetics Native Wallet Data 🔑🔑", walletData);
+          
+          if (!walletData){
+               console.log("Not OUR Qubetics Native Wallet Returning 📢📢 >>>", wallet_address);
+              return;
+
+            }
+        
+            
+          const { wallet_id, user_id } = walletData;
+      
+          // Merge wallet_id and user_id into sessionDetails
+          const enrichedSession = { ...sessionDetails, wallet_id, user_id };
+      
+          // Send to Kafka
+          await kafkaHelper.produceMessage(
+            config.KAFKA_TRANSACTIONS.DVPN_SESSION_TOPIC,
+            enrichedSession
+          );
+        } catch (err) {
+          console.error("❌ Error in checkOurDvpnSession:", err);
+        }
+      }
 
 }
 export const processedQueueTransactions = new ProcessedBlockTransactions()

@@ -33,6 +33,8 @@ export const config = {
     COSMOS_BEHIND_BLOCK_TX_GROUP_ID: zookeeperConfig.config.TICS_NATIVE_BEHIND_BLOCK_TX_GROUP_ID
   },
   KAFKA_TRANSACTIONS: {
+    DVPN_SESSION_TOPIC: zookeeperConfig.config.DVPN_SESSION_TOPIC || "dvpn_session_topic",
+    DVPN_SESSION_GROUP_ID: zookeeperConfig.config.DVPN_SESSION_GROUP_ID || "dvpn_session_group_id",
     DEPOSIT_WITHDRAW_GROUP_ID: zookeeperConfig.config.TICS_NATIVE_DEPOSIT_WITHDRAW_GROUP_ID,
     DEPOSIT_WITHDRAW_TOPIC: zookeeperConfig.config.TICS_NATIVE_DEPOSIT_WITHDRAW_TOPIC,
     COSMOS_PENDING_WITHDRAWAL_TX_TOPIC: zookeeperConfig.config.TICS_NATIVE_PENDING_WITHDRAWAL_TX_TOPIC,

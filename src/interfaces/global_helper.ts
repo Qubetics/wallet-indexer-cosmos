@@ -25,3 +25,17 @@ export interface TxReceipt {
     value: string;
     trnxFee: number | string;
 }
+
+export interface DvpnSessionsInterface {
+    wallet_id?: number;
+    user_id?: number;
+    wallet_address?: string;
+    node_id?: string;
+    tx_hash?: string;
+    node_address?: string;
+    status?: string;
+    status_at?: string;
+    block?: number;
+    event?: string;
+    start_at?: string;
+}
