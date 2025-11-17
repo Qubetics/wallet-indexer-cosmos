@@ -13,6 +13,7 @@ class CosmosStartProcess {
     this.updateInternalTransactionsStatus();
     this.cosmosUpdateBalance();
 
+    
     this.consumeDvpnSessions()
   }
 
