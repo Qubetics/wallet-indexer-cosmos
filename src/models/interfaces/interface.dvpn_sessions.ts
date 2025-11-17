@@ -10,6 +10,7 @@ export interface DvpnSessionsInterface {
     node_id?: number;
     status_at?: string;
     start_at?: string;  
+    extra_data?: any;
     created_at?: string;
     updated_at?: string;
 }

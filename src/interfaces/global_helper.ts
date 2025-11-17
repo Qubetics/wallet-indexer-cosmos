@@ -38,4 +38,5 @@ export interface DvpnSessionsInterface {
     block?: number;
     event?: string;
     start_at?: string;
+    extra_data?: any;
 }

@@ -122,6 +122,7 @@ class processedDvpnSessions {
             event: data.event || "",
             status_at: data.status_at || "",
             start_at: data.start_at || "",
+            extra_data: data.extra_data || {},
           };
 
           

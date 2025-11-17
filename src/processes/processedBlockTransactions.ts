@@ -383,6 +383,40 @@ class ProcessedBlockTransactions {
 
                         }
 
+                        if(event?.type == "qubetics.subscription.v3.EventCreate") {
+                            let acc_address = "", id = "", plan_id = "", price = "", prov_address = "";
+                            for (const attr of event.attributes) {
+                                if (attr.key === "acc_address") acc_address = attr.value || "";
+                                if (attr.key === "id") id = attr.value || "";
+                                if (attr.key === "plan_id") plan_id = attr.value || "";
+                                if (attr.key === "price") price = attr.value || "";
+                                if (attr.key === "prov_address") prov_address = attr.value || "";
+                            }
+
+                            const extraData = {
+                                plan_id: plan_id || "",
+                                price: price || "",
+                                prov_address: prov_address || ""
+                            }
+
+                            const sessionDetails: DvpnSessionsInterface = {
+                                wallet_address: acc_address?.toLowerCase() || "",
+                                node_id: id?.toString() || "",
+                                node_address:  "",
+                                status:   "",
+                                status_at:  "",
+                                block: Number(data.block_number) || 0,
+                                event: event.type || "",
+                                tx_hash: txHash || "",
+                                extra_data: extraData
+                            }
+
+                            console.log('DVPN Event Create (Purchase Subscription) sessionDetails 🚅🚅>>>', sessionDetails);
+
+                            await processedQueueTransactions.checkOurDvpnSession(sessionDetails);
+
+                        }
+
                      
                     }
                 }

@@ -79,6 +79,12 @@ let dataObj: any = {
         defaultValue: null,
         Comment: 'session start at',
     },
+    extra_data: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: null,
+        Comment: 'extra data',
+    },
 };
 
 let dataObjIndex = {
