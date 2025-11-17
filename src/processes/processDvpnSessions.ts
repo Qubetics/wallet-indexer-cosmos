@@ -111,14 +111,14 @@ class processedDvpnSessions {
           if(exist) { return };
 
           // create new session
-          let sessionData: DvpnSessionsModelInterface = {
+          const sessionData: DvpnSessionsModelInterface = {
             wallet_id: data.wallet_id,
             user_id: data.user_id,
             status: data.status || "",
             block: data.block || 0,
             tx_hash: data.tx_hash || "",
             node_address: data.node_address || "",
-            node_id: Number(data.node_id) || 0,
+            node_id: Number(String(data.node_id).replace(/"/g, "")) || 0,
             event: data.event || "",
             status_at: data.status_at || "",
             start_at: data.start_at || "",

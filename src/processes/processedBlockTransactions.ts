@@ -222,7 +222,6 @@ class ProcessedBlockTransactions {
                     }
                 }
                 for (const log of JSON.parse(txResult?.log)) {
-                    console.log("log these events  in this block>>>", log.events);
                     for (const event of log.events || []) {
                         // Normal Transfers
                         if (event.type === "transfer") {
@@ -353,7 +352,8 @@ class ProcessedBlockTransactions {
 
 
                         }
-
+                        
+                        //// DVPN Session Create Session
                         if(event?.type == "qubetics.subscription.v3.EventCreateSession") {
                             
                             let acc_address = "", id = "", node_address = "", status = "", status_at = "", subscription_id = "";

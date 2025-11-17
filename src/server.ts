@@ -65,7 +65,7 @@ class CosmosStartProcess {
   public async consumeDvpnSessions() {
     setTimeout(async () => {
       await processedDvpnSession.consumeDvpnSessionsQueue();
-    }, 10000);
+    }, 1000);
   }
 }
 
