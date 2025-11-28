@@ -327,11 +327,12 @@ class ProcessedBlockTransactions {
                             
                             let acc_address = "", id = "", node_address = "", status = "", status_at = "";
                             for (const attr of event.attributes) {
-                                if (attr.key === "acc_address") acc_address = attr.value || "";
-                                if (attr.key === "id") id = attr.value || "";
-                                if (attr.key === "node_address") node_address = attr.value || "";
-                                if (attr.key === "status") status = attr.value || "";
-                                if (attr.key === "status_at") status_at = attr.value || "";
+                                const cleanValue = attr.value?.replace(/"/g, "") || "";
+                                if (attr.key === "acc_address") acc_address = cleanValue || "";
+                                if (attr.key === "id") id = cleanValue || "";
+                                if (attr.key === "node_address") node_address = cleanValue || "";
+                                if (attr.key === "status") status = cleanValue || "";
+                                if (attr.key === "status_at") status_at = cleanValue || "";
                                 
                             }
 
