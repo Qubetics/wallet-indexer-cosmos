@@ -30,7 +30,12 @@ export const config = {
     COSMOS_BLOCK_TX_TOPIC: zookeeperConfig.config.TICS_NATIVE_BLOCK_TX_TOPIC,
     COSMOS_BEHIND_BLOCK_TX_TOPIC: zookeeperConfig.config.TICS_NATIVE_BEHIND_BLOCK_TX_TOPIC,
     COSMOS_BLOCK_TX_GROUP_ID: zookeeperConfig.config.TICS_NATIVE_BLOCK_TX_GROUP_ID,
-    COSMOS_BEHIND_BLOCK_TX_GROUP_ID: zookeeperConfig.config.TICS_NATIVE_BEHIND_BLOCK_TX_GROUP_ID
+    COSMOS_BEHIND_BLOCK_TX_GROUP_ID: zookeeperConfig.config.TICS_NATIVE_BEHIND_BLOCK_TX_GROUP_ID,
+    
+
+    //only used for transactions from chain abstraction
+    CHAIN_ABS_TX_TOPIC: "chain_abstraction_tx_topic",
+    CHAIN_ABS_TX_GROUP_ID: "chain_abstraction_tx_group_id"
   },
   KAFKA_TRANSACTIONS: {
     DVPN_SESSION_TOPIC: zookeeperConfig.config.DVPN_SESSION_TOPIC || "dvpn_session_topic",

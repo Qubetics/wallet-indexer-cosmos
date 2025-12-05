@@ -25,4 +25,6 @@ export interface ITrnxHistoryInterface {
     gas_reverted: number;
     fiat_price: number | null,
     fiat_type: string | null,
+    created_at?: Date | null;
+    updated_at?: Date | null;
 }

@@ -8,5 +8,6 @@ export enum TrnxTypeEnum {
     SMARTCONTRACTINTERACTION = 'smart_contract_interaction',
     DAPP = 'dapp',
     APPROVE = 'Approve',
-    SWAP = 'Swap'
+    SWAP = 'Swap',
+    CHAIN_ABSTRACTION = 'chain_abstraction'
 }
