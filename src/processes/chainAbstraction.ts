@@ -1,5 +1,4 @@
 import { config } from "../config/config";
-import cosmosProcessHelper from "./process.helper";
 import { BlockChainStatusEnum, KEYS, TrnxTypeEnum } from "../enum";
 import { TicsNativeOldBlockModel, TrnxHistoryModel } from "../models";
 import { globalHelper } from "../helpers/global";
@@ -14,7 +13,7 @@ class ChainAbsTransactions {
 
     public chainAbsTxTopic =  config.KAFKA_BLOCKS.CHAIN_ABS_TX_TOPIC
     public chainAbsTxGroupId = config.KAFKA_BLOCKS.CHAIN_ABS_TX_GROUP_ID
-    public chainAbsApiUrl = 'https://stage-chain-abstraction-api.qubetics.work'
+    public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
 
     public async getChainAbsTransactions() : Promise<void> {
        try {
