@@ -145,7 +145,11 @@ class ChainAbsTransactions {
 
            const INTENT_HASH : any = tx_id;
 
-           const response = await axios.get(`${this.chainAbsApiUrl}/api/routes/intent-status?intent-hash=${INTENT_HASH}`);
+           const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+           }
+
+           const response = await axios.get(`${this.chainAbsApiUrl}/api/routes/intent-status?intent-hash=${INTENT_HASH}`, { headers });
 
            if(response.status !== 200) {
             console.error("Error in fetching intent status:", response.status, response.statusText);
