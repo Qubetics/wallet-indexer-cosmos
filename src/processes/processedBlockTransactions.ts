@@ -323,8 +323,8 @@ class ProcessedBlockTransactions {
                         }
 
                         // DVPN Session Update Status
-                        if(event?.type == "qubetics.session.v3.EventUpdateStatus") {
-                            
+                        if (event?.type == "qubetics.session.v3.EventUpdateStatus") {
+
                             let acc_address = "", id = "", node_address = "", status = "", status_at = "";
                             for (const attr of event.attributes) {
                                 const cleanValue = attr.value?.replace(/"/g, "") || "";
@@ -333,7 +333,7 @@ class ProcessedBlockTransactions {
                                 if (attr.key === "node_address") node_address = cleanValue || "";
                                 if (attr.key === "status") status = cleanValue || "";
                                 if (attr.key === "status_at") status_at = cleanValue || "";
-                                
+
                             }
 
                             const sessionDetails: DvpnSessionsInterface = {
@@ -353,10 +353,10 @@ class ProcessedBlockTransactions {
 
 
                         }
-                        
+
                         //// DVPN Session Create Session
-                        if(event?.type == "qubetics.subscription.v3.EventCreateSession") {
-                            
+                        if (event?.type == "qubetics.subscription.v3.EventCreateSession") {
+
                             let acc_address = "", id = "", node_address = "", status = "", status_at = "", subscription_id = "";
                             for (const attr of event.attributes) {
                                 if (attr.key === "acc_address") acc_address = attr.value || "";
@@ -384,7 +384,7 @@ class ProcessedBlockTransactions {
 
                         }
 
-                        if(event?.type == "qubetics.subscription.v3.EventCreate") {
+                        if (event?.type == "qubetics.subscription.v3.EventCreate") {
                             let acc_address = "", id = "", plan_id = "", price = "", prov_address = "";
                             for (const attr of event.attributes) {
                                 if (attr.key === "acc_address") acc_address = attr.value || "";
@@ -403,9 +403,9 @@ class ProcessedBlockTransactions {
                             const sessionDetails: DvpnSessionsInterface = {
                                 wallet_address: acc_address?.toLowerCase() || "",
                                 node_id: id?.toString() || "",
-                                node_address:  "",
-                                status:   "",
-                                status_at:  "",
+                                node_address: "",
+                                status: "",
+                                status_at: "",
                                 block: Number(data.block_number) || 0,
                                 event: event.type || "",
                                 tx_hash: txHash || "",
@@ -418,7 +418,7 @@ class ProcessedBlockTransactions {
 
                         }
 
-                     
+
                     }
                 }
 
@@ -706,38 +706,36 @@ class ProcessedBlockTransactions {
 
     private async checkOurDvpnSession(sessionDetails: DvpnSessionsInterface) {
         try {
-          let { wallet_address } = sessionDetails;
-          if (!wallet_address) return;
-          
-          wallet_address = wallet_address.toUpperCase();
-          wallet_address = wallet_address.replace(/^"|"$/g, '');
+            let { wallet_address } = sessionDetails;
+            if (!wallet_address) return;
 
-          // Check if the wallet address present in REDIS
-          const walletData = await cosmosProcessHelper.checkOurWalletAddress(wallet_address);
+            wallet_address = wallet_address.toUpperCase();
+            wallet_address = wallet_address.replace(/^"|"$/g, '');
 
-          console.log("Qubetics Native Wallet Data 🔑🔑", walletData);
-          
-          if (!walletData){
-               console.log("Not OUR Qubetics Native Wallet Returning 📢📢 >>>", wallet_address);
-              return;
+            // Check if the wallet address present in REDIS
+            const walletData = await cosmosProcessHelper.checkOurWalletAddress(wallet_address);
+
+            if (!walletData) {
+                console.log("Not OUR Qubetics Native Wallet Returning 📢📢 >>>", wallet_address);
+                return;
 
             }
-        
-            
-          const { wallet_id, user_id } = walletData;
-      
-          // Merge wallet_id and user_id into sessionDetails
-          const enrichedSession = { ...sessionDetails, wallet_id, user_id };
-      
-          // Send to Kafka
-          await kafkaHelper.produceMessage(
-            config.KAFKA_TRANSACTIONS.DVPN_SESSION_TOPIC,
-            enrichedSession
-          );
+
+
+            const { wallet_id, user_id } = walletData;
+
+            // Merge wallet_id and user_id into sessionDetails
+            const enrichedSession = { ...sessionDetails, wallet_id, user_id };
+
+            // Send to Kafka
+            await kafkaHelper.produceMessage(
+                config.KAFKA_TRANSACTIONS.DVPN_SESSION_TOPIC,
+                enrichedSession
+            );
         } catch (err) {
-          console.error("❌ Error in checkOurDvpnSession:", err);
+            console.error("❌ Error in checkOurDvpnSession:", err);
         }
-      }
+    }
 
 }
 export const processedQueueTransactions = new ProcessedBlockTransactions()
