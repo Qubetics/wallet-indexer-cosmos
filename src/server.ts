@@ -16,9 +16,10 @@ class CosmosStartProcess {
     
     this.consumeDvpnSessions()
     //chain abstraction tx status update
-    
-    this.getChainAbsTransactions()
-    this.consumeChainAbsTxQueue()
+     
+    //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
+    // this.getChainAbsTransactions()
+    // this.consumeChainAbsTxQueue()
   }
 
   public async connectKafka() {
@@ -72,19 +73,21 @@ class CosmosStartProcess {
       await processedDvpnSession.consumeDvpnSessionsQueue();
     }, 1000);
   }
+  
 
-  //every 1 minute
-  public getChainAbsTransactions() {
-    schedule.scheduleJob("*/1 * * * *", async function () {
-      await chainAbstraction.chainAbsTransactions.getChainAbsTransactions();
-    });
-  }
+  //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
+  //every 1 minute 
+  // public getChainAbsTransactions() {
+  //   schedule.scheduleJob("*/1 * * * *", async function () {
+  //     await chainAbstraction.chainAbsTransactions.getChainAbsTransactions();
+  //   });
+  // }
 
-  public consumeChainAbsTxQueue() {
-    setTimeout(async () => {
-      await chainAbstraction.chainAbsTransactions.consumeChainAbsTxQueue();
-    }, 10000);
-  }
+  // public consumeChainAbsTxQueue() {
+  //   setTimeout(async () => {
+  //     await chainAbstraction.chainAbsTransactions.consumeChainAbsTxQueue();
+  //   }, 10000);
+  // }
 
 }
 
