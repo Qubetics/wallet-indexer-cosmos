@@ -13,12 +13,19 @@ class ChainAbsTransactions {
 
     public chainAbsTxTopic =  config.KAFKA_BLOCKS.CHAIN_ABS_TX_TOPIC
     public chainAbsTxGroupId = config.KAFKA_BLOCKS.CHAIN_ABS_TX_GROUP_ID
-    public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
+    // public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
+    public chainAbsApiUrl = 'http://example-host:8082'
+
+    // public NEW_CHAIN_ABS_API_URL = 'http://example-host:8082/intent_details/exampleintenthash';
+
+    public normalisedIntentHash(intentHash: string) : string {
+        return intentHash.toLowerCase().replace(/^0x/, '').replace(/^0X/, '').replace(/^0/, '');
+    }
 
     public async getChainAbsTransactions() : Promise<void> {
        try {
          //get transactions from txHistory table  where status is 2 //pending and tx_type is chain_abstraction and createded within 10 minutes and blockchain_status is confirmed
-         const TIME_WITHIN = 10 // minutes
+         const TIME_WITHIN = 30 // minutes
 
          const transactions = await TrnxHistoryModel.findAll({
             where: {
@@ -139,73 +146,93 @@ class ChainAbsTransactions {
      
     public processChainAbsTx = async (data: IChainAbsTxData) => {
         try {
-           console.log("Processing chain abstraction transaction 🗳️🗳️🗳️🗳️🗳️", data);
-
-           const { id, tx_id } = data;
-
-           const INTENT_HASH : any = tx_id;
-
-           const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-           }
-
-           const response = await axios.get(`${this.chainAbsApiUrl}/api/routes/intent-status?intent-hash=${INTENT_HASH}`, { headers });
-
-           if(response.status !== 200) {
-            console.error("Error in fetching intent status:", response.status, response.statusText);
+          console.log("Processing chain abstraction transaction 🗳️", data);
+      
+          const { id, tx_id } = data;
+      
+          const INTENT_HASH: any = this.normalisedIntentHash(tx_id as string);
+          console.log(`Intent hash : ${INTENT_HASH} for tx id : ${tx_id}`);
+      
+          const headers = {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          };
+      
+          const response = await axios.get(
+            `${this.chainAbsApiUrl}/intent_details/${INTENT_HASH}`,
+            { headers }
+          );
+      
+          console.log(
+            `Response from chain abstraction api : Json ${JSON.stringify(
+              response.data
+            )}`
+          );
+      
+          if (response.status !== 200) {
+            console.error(
+              "Error in fetching intent status:",
+              response.status,
+              response.statusText
+            );
             return;
-           }
-
-           const responseData : any = response?.data?.data;
-
-           console.log("Intent Data fetched successfully 🗳️🗳️🗳️🗳️🗳️", responseData);
-
-           if(!responseData) {
+          }
+      
+          // ✅ NEW RESPONSE STRUCTURE
+          const responseData: any = response?.data;
+      
+          console.log("Intent Data fetched successfully 🗳️", responseData);
+      
+          if (!responseData) {
             console.error("No intent data found for intent hash:", INTENT_HASH);
             return;
-           }
+          }
+      
+          const { network_to_target_tx_id, error_message, intent_status } = responseData;
+      
+          console.log(`Network to target tx id : ${network_to_target_tx_id} for tx id : ${tx_id}`);
+          console.log(`Error message : ${error_message} for tx id : ${tx_id}`);
 
-           if(responseData.status == 1) {
-            //then proceed with update status of  tx history table to completed 
-            await TrnxHistoryModel.update({
-                status: 'completed' , // completed
-            }, {
-                where: { id: id }
-            });
-            console.log("Transaction status updated to completed 🎉🎉🎉", id);
+          // ❌ FAILED (highest priority)
+          if (error_message || intent_status == 'Rejected') {
+            console.log(`Updating transaction status to failed for tx id : ${tx_id}`);
+            await TrnxHistoryModel.update(
+              { status: "failed" },
+              { where: { id } }
+            );
+      
+            console.log("Transaction status updated to failed 📢", id);
             return true;
-           }
-
-           if(responseData.status == 2) {
-            //then proceed with update status of  tx history table to pending 
-            await TrnxHistoryModel.update({
-                status: 'pending' , // pending
-            }, {
-                where: { id: id }
-            });
-            console.log("Transaction status updated to pending 🖐️🖐️🖐️", id);
+          }
+      
+          // ✅ COMPLETED
+          if (intent_status && intent_status != null && intent_status == 'Solved') {
+            
+            await TrnxHistoryModel.update(
+              { status: "completed" },
+              { where: { id } }
+            );
+      
+            console.log("Transaction status updated to completed 🎉", id);
             return true;
-           }
-
-
-           if(responseData.status == 0) {
-            //then proceed with update status of  tx history table to failed 
-            await TrnxHistoryModel.update({
-                status: 'failed' , // failed
-            }, {
-                where: { id: id }
-            });
-            console.log("Transaction status updated to failed 📢📢📢", id);
+          }
+      
+          // ⏳ PENDING
+          if (intent_status == 'Pending' || intent_status == 'Batched') {
+            await TrnxHistoryModel.update(
+              { status: "pending" },
+              { where: { id } }
+            );
+      
+            console.log("Transaction status updated to pending 🖐️", id);
             return true;
-           }
-        
-           return;
-
+          }
+      
+          return;
+        } catch (error) {
+          console.error("Error in processChainAbsTx:", error);
         }
-         catch (error) {
-            console.error("Error in processChainAbsTx:", error);
-        }
-    }
+      };
 
 
 

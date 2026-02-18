@@ -18,8 +18,8 @@ class CosmosStartProcess {
     //chain abstraction tx status update
      
     //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
-    // this.getChainAbsTransactions()
-    // this.consumeChainAbsTxQueue()
+    this.getChainAbsTransactions()
+    this.consumeChainAbsTxQueue()
   }
 
   public async connectKafka() {
@@ -75,19 +75,18 @@ class CosmosStartProcess {
   }
   
 
-  //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
   //every 1 minute 
-  // public getChainAbsTransactions() {
-  //   schedule.scheduleJob("*/1 * * * *", async function () {
-  //     await chainAbstraction.chainAbsTransactions.getChainAbsTransactions();
-  //   });
-  // }
+  public getChainAbsTransactions() {
+    schedule.scheduleJob("*/30 * * * * *", async function () {
+      await chainAbstraction.chainAbsTransactions.getChainAbsTransactions();
+    });
+  }
 
-  // public consumeChainAbsTxQueue() {
-  //   setTimeout(async () => {
-  //     await chainAbstraction.chainAbsTransactions.consumeChainAbsTxQueue();
-  //   }, 10000);
-  // }
+  public consumeChainAbsTxQueue() {
+    setTimeout(async () => {
+      await chainAbstraction.chainAbsTransactions.consumeChainAbsTxQueue();
+    }, 10000);
+  }
 
 }
 
