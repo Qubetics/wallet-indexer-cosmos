@@ -14,7 +14,9 @@ class ChainAbsTransactions {
     public chainAbsTxTopic =  config.KAFKA_BLOCKS.CHAIN_ABS_TX_TOPIC
     public chainAbsTxGroupId = config.KAFKA_BLOCKS.CHAIN_ABS_TX_GROUP_ID
     // public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
-    public chainAbsApiUrl = 'http://example-host:8082'
+    // public chainAbsApiUrl = 'http://example-host:8082'
+    public chainAbsApiUrl = 'https://prod-solver-mpc-network.qubetics.work'
+
 
     // public NEW_CHAIN_ABS_API_URL = 'http://example-host:8082/intent_details/exampleintenthash';
 
