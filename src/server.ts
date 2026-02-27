@@ -17,7 +17,6 @@ class CosmosStartProcess {
     this.consumeDvpnSessions()
     //chain abstraction tx status update
      
-    //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
     this.getChainAbsTransactions()
     this.consumeChainAbsTxQueue()
   }
