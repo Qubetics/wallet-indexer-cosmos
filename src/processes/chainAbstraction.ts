@@ -1,10 +1,7 @@
 import { config } from "../config/config";
-import { BlockChainStatusEnum, KEYS, TrnxTypeEnum } from "../enum";
-import { TicsNativeOldBlockModel, TrnxHistoryModel } from "../models";
-import { globalHelper } from "../helpers/global";
+import { BlockChainStatusEnum, CoinFamilyEnum, TrnxTypeEnum } from "../enum";
+import { CoinInterface, CoinsModel, TrnxHistoryModel, WalletModel } from "../models";
 import kafkaHelper from "../config/kafka";
-import fetch from 'node-fetch';
-import { blockchainHelper } from "../helpers";
 import { Op } from "sequelize";
 import { IChainAbsTxData } from "../interfaces/kafka.interface";
 import axios from 'axios';
@@ -16,9 +13,10 @@ class ChainAbsTransactions {
     // public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
     // public chainAbsApiUrl = 'http://example-host:8082'
     public chainAbsApiUrl = 'https://prod-solver-mpc-network.qubetics.work'
+    public tica_pending_balance_update_topic = config.KAFKA_BALANCE.TICS_PENDING_BALANCE_UPDATE_TOPIC
+    public btc_pending_balance_update_topic = config.KAFKA_BALANCE.BTC_PENDING_BALANCE_UPDATE_TOPIC
 
 
-    // public NEW_CHAIN_ABS_API_URL = 'http://example-host:8082/intent_details/exampleintenthash';
 
     public normalisedIntentHash(intentHash: string) : string {
         return intentHash.toLowerCase().replace(/^0x/, '').replace(/^0X/, '').replace(/^0/, '');
@@ -147,94 +145,190 @@ class ChainAbsTransactions {
 
      
     public processChainAbsTx = async (data: IChainAbsTxData) => {
-        try {
-          console.log("Processing chain abstraction transaction 🗳️", data);
-      
-          const { id, tx_id } = data;
-      
-          const INTENT_HASH: any = this.normalisedIntentHash(tx_id as string);
-          console.log(`Intent hash : ${INTENT_HASH} for tx id : ${tx_id}`);
-      
-          const headers = {
-            'User-Agent':
-              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-          };
-      
-          const response = await axios.get(
-            `${this.chainAbsApiUrl}/intent_details/${INTENT_HASH}`,
-            { headers }
-          );
-      
-          console.log(
-            `Response from chain abstraction api : Json ${JSON.stringify(
-              response.data
-            )}`
-          );
-      
-          if (response.status !== 200) {
-            console.error(
-              "Error in fetching intent status:",
-              response.status,
-              response.statusText
-            );
-            return;
-          }
-      
-          // ✅ NEW RESPONSE STRUCTURE
-          const responseData: any = response?.data;
-      
-          console.log("Intent Data fetched successfully 🗳️", responseData);
-      
-          if (!responseData) {
-            console.error("No intent data found for intent hash:", INTENT_HASH);
-            return;
-          }
-      
-          const { network_to_target_tx_id, error_message, intent_status } = responseData;
-      
-          console.log(`Network to target tx id : ${network_to_target_tx_id} for tx id : ${tx_id}`);
-          console.log(`Error message : ${error_message} for tx id : ${tx_id}`);
+      try {
+        console.log("🔄 Processing chain abstraction transaction:", data);
 
-          // ❌ FAILED (highest priority)
-          if (error_message || intent_status == 'Rejected') {
-            console.log(`Updating transaction status to failed for tx id : ${tx_id}`);
-            await TrnxHistoryModel.update(
-              { status: "failed" },
-              { where: { id } }
-            );
-      
-            console.log("Transaction status updated to failed 📢", id);
-            return true;
-          }
-      
-          // ✅ COMPLETED
-          if (intent_status && intent_status != null && intent_status == 'Solved') {
-            
-            await TrnxHistoryModel.update(
-              { status: "completed" },
-              { where: { id } }
-            );
-      
-            console.log("Transaction status updated to completed 🎉", id);
-            return true;
-          }
-      
-          // ⏳ PENDING
-          if (intent_status == 'Pending' || intent_status == 'Batched') {
-            await TrnxHistoryModel.update(
-              { status: "pending" },
-              { where: { id } }
-            );
-      
-            console.log("Transaction status updated to pending 🖐️", id);
-            return true;
-          }
-      
+        const { id, tx_id } = data;
+
+        /** Normalize intent hash */
+        const INTENT_HASH = this.normalisedIntentHash(tx_id as string);
+        console.log(`🔑 Intent hash: ${INTENT_HASH} | TX ID: ${tx_id}`);
+
+        /** API headers */
+        const headers = {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+        };
+
+        /** Fetch intent details from Chain Abstraction API */
+        const response = await axios.get(
+          `${this.chainAbsApiUrl}/intent_details/${INTENT_HASH}`,
+          { headers }
+        );
+
+        if (response.status !== 200) {
+          console.error(
+            "❌ Error fetching intent status:",
+            response.status,
+            response.statusText
+          );
           return;
-        } catch (error) {
-          console.error("Error in processChainAbsTx:", error);
         }
-      };
+
+        const responseData: any = response?.data;
+
+        if (!responseData) {
+          console.error("❌ No intent data found for hash:", INTENT_HASH);
+          return;
+        }
+
+        console.log("✅ Intent data received:", responseData);
+
+        const {
+          network_to_target_tx_id,
+          error_message,
+          intent_status,
+          target_address,
+          target_token,
+        } = responseData;
+
+        console.log("Target TX:", network_to_target_tx_id);
+        console.log("Intent Status:", intent_status);
+        console.log("Error:", error_message);
+
+        /**
+         * ------------------------------------------------
+         * FAILED STATE
+         * ------------------------------------------------
+         */
+        if (error_message || intent_status === "Rejected") {
+          console.log(`❌ Updating transaction to FAILED for TX ID: ${tx_id}`);
+
+          await TrnxHistoryModel.update(
+            { status: "failed" },
+            { where: { id } }
+          );
+
+          return true;
+        }
+
+        /**
+         * ------------------------------------------------
+         * COMPLETED STATE
+         * ------------------------------------------------
+         */
+        if (intent_status === "Solved") {
+          console.log(`✅ Transaction SOLVED for TX ID: ${tx_id}`);
+
+          await TrnxHistoryModel.update(
+            { status: "completed" },
+            { where: { id } }
+          );
+
+          console.log("🎉 Transaction marked as completed:", id);
+
+          /** Validate target wallet and token */
+          if (!target_address || !target_token) {
+            console.log("⚠️ Target address or token missing");
+            return true;
+          }
+
+          /** Determine coin configuration */
+          const isTics = target_token === "tics";
+
+          const COIN_ID = isTics ? 161 : 3;
+          const COIN_FAMILY = isTics ? CoinFamilyEnum.TICS : CoinFamilyEnum.BTC;
+
+          const kafkaTopic = isTics
+            ? this.tica_pending_balance_update_topic
+            : this.btc_pending_balance_update_topic;
+
+          /**
+           * ------------------------------------------------
+           * FETCH WALLET
+           * ------------------------------------------------
+           */
+          const walletData = await WalletModel.findOne({
+            where: {
+              wallet_address: { [Op.like]: `%${target_address}%` },
+              coin_family: COIN_FAMILY,
+              coin_id: COIN_ID,
+            },
+            attributes: ["wallet_address"],
+            raw: true,
+          });
+
+          if (!walletData) {
+            console.log("⚠️ Wallet not found for address:", target_address);
+            return true;
+          }
+
+          /**
+           * ------------------------------------------------
+           * FETCH COIN DATA
+           * ------------------------------------------------
+           */
+          const coinData: CoinInterface = (await CoinsModel.findOne({
+            where: { coin_id: COIN_ID },
+            attributes: [
+              "coin_id",
+              "coin_name",
+              "coin_symbol",
+              "coin_image",
+              "coin_family",
+              "cmc_id",
+              "is_on_cmc",
+              "coin_status",
+              "is_token",
+              "token_type",
+              "decimals",
+              "token_abi",
+              "token_address",
+            ],
+            raw: true,
+          })) as CoinInterface;
+
+          /**
+           * ------------------------------------------------
+           * PRODUCE KAFKA MESSAGE FOR BALANCE UPDATE
+           * ------------------------------------------------
+           */
+          await kafkaHelper.produceMessage(kafkaTopic, {
+            coin_data: coinData,
+            wallet_address: walletData.wallet_address,
+            queue_count: 0,
+          });
+
+          console.log(
+            `💰 Balance update message produced for wallet: ${walletData.wallet_address}`
+          );
+
+          return true;
+        }
+
+        /**
+         * ------------------------------------------------
+         * PENDING STATE
+         * ------------------------------------------------
+         */
+        if (intent_status === "Pending" || intent_status === "Batched") {
+          console.log(`⏳ Transaction still pending for TX ID: ${tx_id}`);
+
+          await TrnxHistoryModel.update(
+            { status: "pending" },
+            { where: { id } }
+          );
+
+          return true;
+        }
+
+        console.log("⚠️ Unknown intent status:", intent_status);
+        return;
+
+      } catch (error) {
+        console.error("🔥 Error in processChainAbsTx:", error);
+      }
+    };
 
 
 
