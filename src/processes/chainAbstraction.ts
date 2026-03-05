@@ -12,7 +12,9 @@ class ChainAbsTransactions {
     public chainAbsTxGroupId = config.KAFKA_BLOCKS.CHAIN_ABS_TX_GROUP_ID
     // public chainAbsApiUrl = 'https://prod-solver-chain-abstraction-api.qubetics.work'
     // public chainAbsApiUrl = 'http://example-host:8082'
-    public chainAbsApiUrl = 'https://prod-solver-mpc-network.qubetics.work'
+    // public chainAbsApiUrl = 'https://prod-solver-mpc-network.qubetics.work'
+    public chainAbsApiUrl = 'http://mainnet.ticssolver.com'
+
     public tica_pending_balance_update_topic = config.KAFKA_BALANCE.TICS_PENDING_BALANCE_UPDATE_TOPIC
     public btc_pending_balance_update_topic = config.KAFKA_BALANCE.BTC_PENDING_BALANCE_UPDATE_TOPIC
 
