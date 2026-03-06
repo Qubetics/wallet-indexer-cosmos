@@ -41,11 +41,11 @@ class ChainAbsTransactions {
          });
 
          if(transactions.length == 0) {
-            console.log('No chain abstraction transactions created within 10 minutes ☀️☀️');
+            console.log('No chain abstraction transactions created within 30 minutes ☀️☀️');
             return;
          }
 
-         console.log('Found Chain abstraction transactions created within 10 minutes ☀️☀️', transactions.length);
+         console.log('Found Chain abstraction transactions created within 30 minutes ☀️☀️', transactions.length);
 
         
          await Promise.all(transactions.map(async (transaction) => {
@@ -203,7 +203,7 @@ class ChainAbsTransactions {
          * FAILED STATE
          * ------------------------------------------------
          */
-        if (error_message || intent_status === "Rejected") {
+        if (intent_status == "Rejected") {
           console.log(`❌ Updating transaction to FAILED for TX ID: ${tx_id}`);
 
           await TrnxHistoryModel.update(
@@ -219,7 +219,7 @@ class ChainAbsTransactions {
          * COMPLETED STATE
          * ------------------------------------------------
          */
-        if (intent_status === "Solved") {
+        if (intent_status == "Solved") {
           console.log(`✅ Transaction SOLVED for TX ID: ${tx_id}`);
 
           await TrnxHistoryModel.update(
@@ -236,7 +236,7 @@ class ChainAbsTransactions {
           }
 
           /** Determine coin configuration */
-          const isTics = target_token === "tics";
+          const isTics = target_token == "tics";
 
           const COIN_ID = isTics ? 161 : 3;
           const COIN_FAMILY = isTics ? CoinFamilyEnum.TICS : CoinFamilyEnum.BTC;
@@ -313,7 +313,7 @@ class ChainAbsTransactions {
          * PENDING STATE
          * ------------------------------------------------
          */
-        if (intent_status === "Pending" || intent_status === "Batched") {
+        if (intent_status == "Pending" || intent_status == "Batched") {
           console.log(`⏳ Transaction still pending for TX ID: ${tx_id}`);
 
           await TrnxHistoryModel.update(
