@@ -14,6 +14,7 @@ export const config = {
   MIN_BLOCK_CONFORMATIONS: zookeeperConfig.config.MIN_TICS_NATIVE_BLOCK_CONFORMATIONS,
   TOKEN_TYPE_COSMOS: `${name}_${zookeeperConfig.config.SERVER}_${zookeeperConfig.config.TOKEN_TYPE_TICS}`,
   STATIC_COIN_FAMILY: zookeeperConfig.config.STATIC_COIN_FAMILY,
+  FIREBASE_SERVICE_ACCOUNT: zookeeperConfig.config.FIREBASE_SERVICE_ACCOUNT,
   REDISKEYS: {
     COSMOS_BLOCKS: `${name}_${zookeeperConfig.config.SERVER}_${zookeeperConfig.config.TICS_NATIVE_BLOCKS}`,
     OLD_BLOCK_COSMOS: zookeeperConfig.config.OLD_BLOCK_TICS_NATIVE,
