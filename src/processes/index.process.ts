@@ -6,7 +6,5 @@ export * from "./processedInternalTransactions";
 export * from "./processedInteralTransactionStatus";
 export * from './process.helper';
 export * from "./processDvpnSessions"
-// export * as processDvpnSessions from "./processDvpnSessions";
 export * as processedAddressBalance from "./processedAddressBalance"
-
 

@@ -106,12 +106,6 @@ class ProcessedBlocks {
             const txs = Array.isArray(blockInfo?.txs) ? blockInfo.txs : [];
 
 
-           
-            // const targetTopic =
-            //     key === KEYS.latestBlock
-            //         ? this.cosmos_block_tx_topic
-            //         : this.cosmos_behind_block_tx_topic;
-
             const targetTopic =  this.cosmos_block_tx_topic
 
 
@@ -182,11 +176,6 @@ class ProcessedBlocks {
             }
 
             const transactionPromises = txs.map(async (tx: any) => {
-                // Defensive: Cosmos txs may have different structure, but we expect Ethermint EVM txs
-                // let txHash = '';
-                // let fromAddress = '';
-                // let toAddress = '';
-                // let value = '0';
 
                 try {
                     const msg = tx?.body?.messages?.[0];
