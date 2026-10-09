@@ -136,10 +136,7 @@ class processedDvpnSessions {
     }
 
 
-
 }
 
-
-// export default new processedDvpnSessions();
 
 export const processedDvpnSession = new processedDvpnSessions();

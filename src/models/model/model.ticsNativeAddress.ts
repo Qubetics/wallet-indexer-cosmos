@@ -75,6 +75,5 @@ WalletModel.hasOne(TicsNativeAddressModel, {
   as: "tics_native_addresses",
 });
 
-// TicsNativeAddressModel.sync({ alter: true });
 
 export default TicsNativeAddressModel;

@@ -83,11 +83,6 @@ class CosmosStartProcess {
   //   });
   // }
 
-  // public consumeChainAbsTxQueue() {
-  //   setTimeout(async () => {
-  //     await chainAbstraction.chainAbsTransactions.consumeChainAbsTxQueue();
-  //   }, 10000);
-  // }
 
 }
 
