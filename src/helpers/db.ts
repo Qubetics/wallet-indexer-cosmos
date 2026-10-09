@@ -1,22 +1,11 @@
 import {
     BooleanEnum,
-    // CoinFamilyEnum,
-    // TokenStandard,
 } from "../enum";
 
 import {
-    // CoinInterface,
-    // CoinsModel,
     DeviceTokenModel,
-    // SettingsModel,
-    // RewardHistoryModel,
-    // WalletModel,
-    // ReferralModel,
-    // CatchErrorMsgsModel,
-    // CoinPriceInFiatModel,
 
 } from "../models/index";
-// import { utilityHelper } from "../helpers";
 import { Op } from "sequelize";
 
 class DbHelper {

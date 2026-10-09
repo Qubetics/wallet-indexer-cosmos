@@ -332,7 +332,6 @@ class ProcessedBlockTransactions {
                 const txFee = await utilityHelper.bigNumberSafeMath(gasUsed, '*', effectiveGasPrice);
                 const gasInCosmos = blockchainHelper.convertToWei(txFee);
 
-                // const cosmosValue = blockchainHelper.convertToWei((data.value ? data.value : 0));
                 const amount = parseFloat(data.value);
 
                 const txData: TxType = {
