@@ -105,12 +105,6 @@ class ProcessedBlocks {
             const txs = Array.isArray(blockInfo?.txs) ? blockInfo.txs : [];
 
 
-
-            // const targetTopic =
-            //     key === KEYS.latestBlock
-            //         ? this.cosmos_block_tx_topic
-            //         : this.cosmos_behind_block_tx_topic;
-
             const targetTopic = this.cosmos_block_tx_topic
 
 
