@@ -1,2 +1,2 @@
-# Qubetic Cosmos Processes
+# Qubetics Cosmos Processes
 
