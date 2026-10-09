@@ -18,8 +18,6 @@ class ChainAbsTransactions {
     public chainAbsApiUrl = 'https://prod-solver-mpc-network.qubetics.work'
 
 
-    // public NEW_CHAIN_ABS_API_URL = 'http://example-host:8082/intent_details/exampleintenthash';
-
     public normalisedIntentHash(intentHash: string) : string {
         return intentHash.toLowerCase().replace(/^0x/, '').replace(/^0X/, '').replace(/^0/, '');
     }
@@ -235,7 +233,6 @@ class ChainAbsTransactions {
           console.error("Error in processChainAbsTx:", error);
         }
       };
-
 
 
 }
