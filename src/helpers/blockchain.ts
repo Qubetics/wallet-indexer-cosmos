@@ -1,5 +1,4 @@
 import { utilityHelper } from "./utility";
-import { ethers } from 'ethers';
 import fetch from 'node-fetch';
 import { config } from "../config";
 
@@ -11,14 +10,6 @@ class BlockchainHelper {
     public initialize() { }
 
 
-    convertToWei = (value: number | string | bigint): string => {
-        try {
-            return ethers.parseUnits(value.toString(), 18).toString();
-        } catch (error) {
-            console.error(`convertToWei error >>`, error);
-            return "0";
-        }
-    }
     public coinFetchBalance = async (
         address: string
     ) => {
