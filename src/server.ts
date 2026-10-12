@@ -17,9 +17,6 @@ class CosmosStartProcess {
     this.consumeDvpnSessions()
     //chain abstraction tx status update
      
-    //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
-    // this.getChainAbsTransactions()
-    // this.consumeChainAbsTxQueue()
   }
 
   public async connectKafka() {
@@ -74,14 +71,6 @@ class CosmosStartProcess {
     }, 1000);
   }
   
-
-  //TODO : Not Implemented yet on Production Environment when Move to Production Uncomment this
-  //every 1 minute 
-  // public getChainAbsTransactions() {
-  //   schedule.scheduleJob("*/1 * * * *", async function () {
-  //     await chainAbstraction.chainAbsTransactions.getChainAbsTransactions();
-  //   });
-  // }
 
 
 }
