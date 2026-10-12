@@ -4,7 +4,6 @@ import { KEYS } from "../enum";
 import { TicsNativeOldBlockModel } from "../models";
 import { globalHelper } from "../helpers/global";
 import kafkaHelper from "../config/kafka";
-import fetch from 'node-fetch';
 import { blockchainHelper } from "../helpers";
 class ProcessedBlocks {
     public minBlockConfirmation: number;
