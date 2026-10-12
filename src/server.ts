@@ -1,5 +1,5 @@
 import kafkaHelper from "./config/kafka";
-import { procesesDepositWithdrawQueue, processedInternalTransactions, updateInteralTransactionStatus, processedBlocks, processedQueueTransactions, processedAddressBalance, processedDvpnSession, chainAbstraction } from "./processes/index.process"
+import { procesesDepositWithdrawQueue, processedInternalTransactions, updateInteralTransactionStatus, processedBlocks, processedQueueTransactions, processedAddressBalance, processedDvpnSession } from "./processes/index.process";
 import schedule from "node-schedule";
 class CosmosStartProcess {
   constructor() {

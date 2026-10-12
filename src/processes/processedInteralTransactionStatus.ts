@@ -236,7 +236,6 @@ class UpdateInteralTransactionStatus {
       const to_address = txnData.to_adrs;
       const tx_type = txnData?.type
       const coin_symbol = trx_data?.coin?.coin_symbol
-      const coin_family = txnData.coin_family;
       //Update transaction status
       const txUpdateRes = await TrnxHistoryModel.update({ blockchain_status: status_tx, tx_fee: trx_data.tx_fee, gas_reverted: trx_data.gas_reverted }, { where: { id: tx_row_id } })
       if (txUpdateRes) {

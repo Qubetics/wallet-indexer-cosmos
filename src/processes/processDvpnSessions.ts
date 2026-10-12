@@ -1,7 +1,6 @@
 import { config } from "../config";
 import kafkaHelper from "../config/kafka";
-import { walletHelper } from "../helpers";
-import { DvpnSessionsModel, WalletModel } from "../models";
+import { DvpnSessionsModel } from "../models";
 import { DvpnSessionsInterface } from "../interfaces/global_helper";
 import { DvpnSessionsInterface as DvpnSessionsModelInterface } from "../models/interfaces/interface.dvpn_sessions";
 

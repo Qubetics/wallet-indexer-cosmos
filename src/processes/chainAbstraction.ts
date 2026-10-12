@@ -1,10 +1,7 @@
 import { config } from "../config/config";
-import { BlockChainStatusEnum, KEYS, TrnxTypeEnum } from "../enum";
-import { TicsNativeOldBlockModel, TrnxHistoryModel } from "../models";
-import { globalHelper } from "../helpers/global";
+import { BlockChainStatusEnum, TrnxTypeEnum } from "../enum";
+import { TrnxHistoryModel } from "../models";
 import kafkaHelper from "../config/kafka";
-import fetch from 'node-fetch';
-import { blockchainHelper } from "../helpers";
 import { Op } from "sequelize";
 import { IChainAbsTxData } from "../interfaces/kafka.interface";
 import axios from 'axios';
