@@ -236,7 +236,6 @@ class UpdateInteralTransactionStatus {
       const to_address = txnData.to_adrs;
       const tx_type = txnData?.type
       const coin_symbol = trx_data?.coin?.coin_symbol
-      const coin_family = txnData.coin_family;
       //Update transaction status
       const txUpdateRes = await TrnxHistoryModel.update({ blockchain_status: status_tx, tx_fee: trx_data.tx_fee, gas_reverted: trx_data.gas_reverted }, { where: { id: tx_row_id } })
       if (txUpdateRes) {
@@ -304,7 +303,7 @@ class UpdateInteralTransactionStatus {
               if (to_address !== from_address) {
                 if (tx_type !== TrnxTypeEnum.DAPP) {
                   if (trx_data.coin?.token_type === null || trx_data.coin?.token_type?.toLowerCase() === TokenStandard.ERC20.toLowerCase()) {
-                    let balance: any = await walletHelper.updateBalance(
+                    await walletHelper.updateBalance(
                       to_address, /// wallet_address,
                       trx_data?.coin /// coin
                     );

@@ -3,7 +3,6 @@ import redisClient from "../config/redis";
 import { promisify } from "util";
 import { config } from "../config/config";
 import { globalHelper } from "../helpers/global";
-import fetch from 'node-fetch';
 import { blockchainHelper } from "../helpers";
 
 class CosmosProcessHelper {

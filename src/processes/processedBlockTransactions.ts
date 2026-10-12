@@ -7,7 +7,6 @@ import { TxType } from "../types/erc20Tokens.Types";
 import { TrnxTypeEnum } from "../enum";
 import { globalHelper } from "../helpers/global";
 import { TransactionReceipt } from "ethers";
-import fetch from 'node-fetch';
 import { sha256 } from "@cosmjs/crypto"
 import { toHex } from "@cosmjs/encoding"
 class ProcessedBlockTransactions {

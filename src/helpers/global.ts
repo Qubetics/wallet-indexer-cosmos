@@ -1,7 +1,7 @@
 import axios from "axios";
 import { config } from "../config/config";
 import { CatchErrorMsgsModel, CoinInterface } from "../models";
-import { WalletModel, CustomTokennModel, TicsNativeAddressModel } from "../models/model/index"
+import { WalletModel, TicsNativeAddressModel } from "../models/model/index";
 import cosmosProcessHelper from "../processes/process.helper";
 
 class GlobalHelper {
@@ -41,7 +41,7 @@ class GlobalHelper {
             const MAILGUN_API_KEY: string = `${config.MAILGUN.MAILGUN_API_KEY}`;
             const MAILGUN_DOMAIN: string = `${config.MAILGUN.MAILGUN_DOMAIN}`;
             const MAILGUN_BASE_URL: string = `${config.MAILGUN.MAILGUN_BASE_URL}${MAILGUN_DOMAIN}`;
-            const response: any = await axios({
+            await axios({
                 method: 'post',
                 url: `${MAILGUN_BASE_URL}/messages`,
                 auth: {

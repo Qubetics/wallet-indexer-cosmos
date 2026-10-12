@@ -4,7 +4,6 @@ import { KEYS } from "../enum";
 import { TicsNativeOldBlockModel } from "../models";
 import { globalHelper } from "../helpers/global";
 import kafkaHelper from "../config/kafka";
-import fetch from 'node-fetch';
 import { blockchainHelper } from "../helpers";
 class ProcessedBlocks {
     public minBlockConfirmation: number;
@@ -102,10 +101,6 @@ class ProcessedBlocks {
 
             const transactionPromises = txs.map(async (tx: any) => {
                 // Defensive: Cosmos txs may have different structure, but we expect Ethermint EVM txs
-                let txHash = '';
-                let fromAddress = '';
-                let toAddress = '';
-                let value = '0';
 
                 try {
                     const msg = tx?.body?.messages?.[0];
