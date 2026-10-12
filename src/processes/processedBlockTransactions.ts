@@ -342,14 +342,13 @@ class ProcessedBlockTransactions {
                         //// DVPN Session Create Session
                         if(event?.type == "qubetics.subscription.v3.EventCreateSession") {
                             
-                            let acc_address = "", id = "", node_address = "", status = "", status_at = "", subscription_id = "";
+                            let acc_address = "", id = "", node_address = "", status = "", status_at = "";
                             for (const attr of event.attributes) {
                                 if (attr.key === "acc_address") acc_address = attr.value || "";
                                 if (attr.key === "id") id = attr.value || "";
                                 if (attr.key === "node_address") node_address = attr.value || "";
                                 if (attr.key === "status") status = attr.value || "";
                                 if (attr.key === "status_at") status_at = attr.value || "";
-                                if (attr.key === "subscription_id") subscription_id = attr.value || "";
                             }
 
                             const sessionDetails: DvpnSessionsInterface = {
