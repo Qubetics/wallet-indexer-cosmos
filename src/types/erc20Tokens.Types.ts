@@ -4,7 +4,7 @@ import {
 } from "../enum";
 import { CoinInterface } from "../models";
 
-export type ERC20Tokens = {
+type ERC20Tokens = {
   coin_symbol: string;
   token_address: string;
   decimals: number;
