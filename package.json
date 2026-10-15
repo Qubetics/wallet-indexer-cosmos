@@ -19,8 +19,8 @@
     "node": ">=24.21.0 <25"
   },
   "dependencies": {
-    "@cosmjs/crypto": "^0.34.0",
-    "@cosmjs/encoding": "^0.34.0",
+    "@cosmjs/crypto": "^0.39.0",
+    "@cosmjs/encoding": "^0.39.0",
     "axios": "^0.21.1",
     "bignumber.js": "^11.1.5",
     "dotenv": "^14.3.2",
