@@ -1,6 +1,5 @@
 import { CoinInterface, TicsNativeAddressModel, TicsNativeOldBlockModel, WalletInterface, WalletModel } from "../models";
 import redisClient from "../config/redis";
-import { promisify } from "util";
 import { config } from "../config/config";
 import { globalHelper } from "../helpers/global";
 import { blockchainHelper } from "../helpers";
@@ -65,8 +64,7 @@ class CosmosProcessHelper {
   };
   public async getKeyValuePair(keyName: string, field: string) {
     try {
-      const getAsync = promisify(redisClient.HGET).bind(redisClient);
-      const value = await getAsync(keyName, this.safeToUpperCase(field) || "");
+      const value = await redisClient.hGet(keyName, this.safeToUpperCase(field) || "");
       return value;
     } catch (err: any) {
       console.error('getKeyValuePair >>>>', err);
@@ -117,7 +115,7 @@ class CosmosProcessHelper {
 
   public async setKeyValuePair(keyName: string, field: string, value: string) {
     try {
-      redisClient.hset(keyName, this.safeToUpperCase(field), value);
+      await redisClient.hSet(keyName, this.safeToUpperCase(field), value);
     } catch (err: any) {
       console.error('setKeyValuePair >>>', err);
     }
@@ -155,12 +153,8 @@ class CosmosProcessHelper {
 
   public async deleteKeyValuePair(keyName: string, field: string) {
     try {
-      redisClient.hdel(keyName, this.safeToUpperCase(field), function (err) {
-        if (err) {
-          throw err;
-        }
-        return true;
-      })
+      await redisClient.hDel(keyName, this.safeToUpperCase(field));
+      return true;
     } catch (err: any) {
       console.error("Error in deleteKeyValuePair>>>", err)
       return false;
@@ -179,12 +173,7 @@ class CosmosProcessHelper {
   public async getMultipleKeyValuePairs(keyName: string, fields: string[]) {
     try {
       const upperFields = fields.map(f => f.toUpperCase());
-      return new Promise((resolve, reject) => {
-        redisClient.hmget(keyName, ...upperFields, (err, results) => {
-          if (err) reject(err);
-          else resolve(results);
-        });
-      });
+      return await redisClient.hmGet(keyName, upperFields);
     } catch (err: any) {
       console.error('getMultipleKeyValuePairs >>>>', err);
       return null;
