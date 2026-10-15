@@ -28,7 +28,7 @@
     "dotenv": "^14.3.2",
     "firebase-admin": "^13.0.1",
     "kafkajs": "^2.2.4",
-    "mysql2": "^2.3.0",
+    "mysql2": "^3.24.6",
     "node-fetch": "^2.7.0",
     "node-schedule": "^2.0.0",
     "node-zookeeper-client": "^1.1.3",
