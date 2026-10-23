@@ -16,7 +16,7 @@
   "author": "Qubetics",
   "license": "ISC",
   "engines": {
-    "node": ">=24.21.0 <25"
+    "node": ">=24.22.1 <25"
   },
   "dependencies": {
     "@cosmjs/crypto": "^0.39.0",
