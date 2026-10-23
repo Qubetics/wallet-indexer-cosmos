@@ -1,0 +1,45 @@
+{
+  "name": "qubetics_wallet_processes",
+  "version": "1.0.0",
+  "description": "Process for qubetics wallet cosmos blockchain",
+  "main": "index.ts",
+  "scripts": {
+    "compile": "tsc",
+    "server": "nodemon --max-old-space-size=20480 build/index.js",
+    "dev": "concurrently \"npm run compile\" \"npm run server\"",
+    "start": "npm run compile && node build/index.js",
+    "test": "tsc && node --test test/*.test.js"
+  },
+  "keywords": [
+    "processes"
+  ],
+  "author": "Qubetics",
+  "license": "ISC",
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "dependencies": {
+    "@cosmjs/crypto": "^0.34.0",
+    "@cosmjs/encoding": "^0.34.0",
+    "@types/node-schedule": "^1.3.2",
+    "@types/redis": "^2.8.31",
+    "axios": "^0.21.1",
+    "bignumber.js": "^9.0.1",
+    "dotenv": "^14.3.2",
+    "firebase-admin": "^13.0.1",
+    "kafkajs": "^2.2.4",
+    "mysql2": "^2.3.0",
+    "node-schedule": "^2.0.0",
+    "node-zookeeper-client": "^1.1.3",
+    "redis": "^3.1.2",
+    "sequelize": "^6.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/node-fetch": "^2.6.12",
+    "@types/node-zookeeper-client": "^0.2.8",
+    "concurrently": "^6.2.0",
+    "nodemon": "^2.0.12",
+    "typescript": "^4.3.5"
+  }
+}
