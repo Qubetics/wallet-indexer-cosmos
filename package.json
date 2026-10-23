@@ -14,7 +14,7 @@
     "processes"
   ],
   "author": "Qubetics",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@cosmjs/crypto": "^0.34.0",
     "@cosmjs/encoding": "^0.34.0",
